@@ -1,4 +1,4 @@
-const CACHE='ma-routine-v1';
+const CACHE='ma-routine-v2';
 const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 const NETWORK_TIMEOUT=3500;
 // Ce service worker ne touche qu'aux caches « ma-routine- » : ARISE et ROAD TO GI partagent la même origine
