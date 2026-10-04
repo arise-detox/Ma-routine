@@ -13,7 +13,9 @@ Ouvrir l'adresse dans Safari, puis Partager > « Sur l'écran d'accueil ».
 - **Menus** : cycles de 4 semaines (20 jours, 60 repas), un nouveau cycle différent d'au moins 70 % du précédent. Les quantités de féculents sont ajustées aux calories du jour, les protéines restent. Si les jours choisis ne tiennent pas dans le budget, les menus se rééquilibrent vers des recettes moins chères. Chaque repas peut être remplacé.
 - **Courses** : liste par semaine avec les conditionnements du commerce et les restes déjà déduits, budget prévu et dépensé, prix modifiables. Un gros chiffre indique combien il te reste à la fin du cycle sur ton budget initial (budget moins courses prévues ou dépenses réelles), et chaque semaine affiche le reste après elle.
 - **Aujourd'hui** : calories, protéines, eau et budget, repas à cocher, ajouts rapides, poids. Le week-end n'est pas planifié : on choisit les jours de la semaine suivante.
-- **Recettes** : les 34 recettes, recherche et filtres.
+- **Marge de sécurité** : 15 € par cycle (modifiable dans les réglages, au prorata des repas gardés) sont réservés en plus des courses prévues pour les imprévus et les écarts de prix.
+- **Prix** : relevés le 4 octobre 2026 sur auchan.fr pour l'Auchan Drive Hypermarché Kremlin-Bicêtre (Okabé), modifiables dans l'onglet Courses.
+- **Recettes** : les 34 recettes, recherche et filtres. Les petits suisses nature (Auchan, 3,8 % MG) remplacent le skyr avec la même quantité de protéines ; la dinde hachée n'étant pas proposée au drive, la liste prévoit des escalopes de dinde à hacher.
 - **Réglages** : budget, objectifs fixes si besoin, lundi de départ, reprise du poids et de la date depuis ROAD TO GI, sauvegarde et restauration.
 
 ## Calculs
