@@ -195,7 +195,7 @@ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const dLong=v=>cap(fmtLong.format(new Date(dateNumber(v))));
 const dShort=v=>fmtShort.format(new Date(dateNumber(v)));
 const nf0=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0});
-const euro=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const euro=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).replace('-','−')+' €';
 const kc=n=>nf0.format(Math.round(n));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function num(v){const n=parseFloat(String(v).replace(',','.'));return Number.isFinite(n)?n:NaN}
@@ -224,13 +224,13 @@ Object.values(MEAL_BY_ID).forEach(m=>{
 const DEFAULT={
   goals:{budget:230,kcal:2100,protein:180,water:2500,auto:true},
   profile:{sex:'',age:0,height:0,weight:0,target:0,rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7},
-  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},shop:{},spend:[],weights:[],rerolls:{}
+  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{}
 };
 function load(){
   let saved={};try{saved=JSON.parse(store.get(KEY)||'{}')||{}}catch(e){saved={}}
   const base=structuredClone(DEFAULT);
   const s={...base,...saved,goals:{...base.goals,...(saved.goals||{})},profile:{...base.profile,...(saved.profile||{})}};
-  ['prices','checks','extras','water','swaps','off','shop','rerolls'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
+  ['prices','checks','extras','water','swaps','off','offMeal','shop','rerolls'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
   ['spend','weights'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
   return s;
 }
@@ -361,12 +361,20 @@ function posOf(date){
 const dayDate=(cs,w,d)=>addDays(cs,w*7+d);
 
 /* ---------- Jours planifiés, portions, budget ---------- */
+// Un jour se décoche en entier (state.off) ; un repas se décoche seul (state.offMeal). Dans les deux cas il quitte les courses et le budget.
 const dayOn=(cs,w,d)=>!state.off[`${cs}|${w}|${d}`];
-function daysOn(cs,w){let n=0;for(let d=0;d<5;d++)if(dayOn(cs,w,d))n++;return n}
+const mealOn=(cs,w,d,s)=>dayOn(cs,w,d)&&!state.offMeal[`${cs}|${w}|${d}|${s}`];
+const dayMask=(cs,w,d)=>[0,1,2].map(s=>mealOn(cs,w,d,s));
+const dayActive=(cs,w,d)=>dayMask(cs,w,d).some(Boolean);
+function daysOn(cs,w){let n=0;for(let d=0;d<5;d++)if(dayActive(cs,w,d))n++;return n}
 function cycleDays(cs){let n=0;for(let w=0;w<4;w++)n+=daysOn(cs,w);return n}
+function weekMeals(cs,w){let n=0;for(let d=0;d<5;d++)n+=dayMask(cs,w,d).filter(Boolean).length;return n}
+function cycleMeals(cs){let n=0;for(let w=0;w<4;w++)n+=weekMeals(cs,w);return n}
+const SHARE=[0.30,0.36,0.34];   // part des calories du jour : matin, midi, soir
 const budgetPerDay=()=>state.goals.budget/20;
-// budget dégressif : 230 € pour 20 jours = 11,50 € par jour planifié ; chaque jour décoché retire sa part
-const cycleBudget=cs=>Math.round(budgetPerDay()*cycleDays(cs)*100)/100;
+const budgetPerMeal=()=>state.goals.budget/60;
+// budget dégressif : 230 € pour 60 repas = 3,83 € par repas (11,50 € par jour de 3 repas) ; chaque jour ou repas décoché retire sa part
+const cycleBudget=cs=>Math.round(budgetPerMeal()*cycleMeals(cs)*100)/100;
 const price=k=>{const v=state.prices[k];return Number.isFinite(v)&&v>0?v:FOODS[k].packPrice};
 
 function scaleIngredient(txt,k,f){
@@ -391,14 +399,15 @@ function scaleMeal(m,f){
   const res={...m,f,kcal:Math.round((m.kcal+(f-1)*m.sk)/5)*5,protein:Math.round(m.protein+(f-1)*m.sp),cost:Math.round(cost*100)/100,shop,ingredients};
   mealCache.set(ck,res);return res;
 }
-// facteur de féculents du jour pour atteindre les calories visées (0,5 à 1,8, par pas de 0,05)
-function dayFactor(date,baseMeals){
-  const S=baseMeals.reduce((a,m)=>a+m.sk,0),B=baseMeals.reduce((a,m)=>a+m.kcal,0);
-  if(S<=0)return 1;
-  const f=1+(targetKcal(date)-B)/S;
-  return Math.round(Math.min(1.8,Math.max(0.5,f))*20)/20;
+// facteur de féculents du jour pour atteindre les calories visées sur les repas gardés (0,5 à 1,8, par pas de 0,05)
+function scaledDay(date,ids,mask){
+  const base=ids.map(i=>MEAL_BY_ID[i]),on=mask||[true,true,true];
+  const share=on.reduce((a,v,s)=>a+(v?SHARE[s]:0),0);
+  let S=0,B=0;base.forEach((m,s)=>{if(on[s]){S+=m.sk;B+=m.kcal}});
+  let f=1;
+  if(S>0)f=Math.round(Math.min(1.8,Math.max(0.5,1+(targetKcal(date)*share-B)/S))*20)/20;
+  return{f,share,meals:base.map(m=>scaleMeal(m,f))};
 }
-function scaledDay(date,ids){const base=ids.map(i=>MEAL_BY_ID[i]),f=dayFactor(date,base);return{f,meals:base.map(m=>scaleMeal(m,f))}}
 
 // menus effectifs d'un cycle : menus de base, ajustés au budget quand les jours choisis le demandent
 function planCost(cs,ids){
@@ -406,8 +415,9 @@ function planCost(cs,ids){
   for(let w=0;w<4;w++){
     const needs={};
     for(let d=0;d<5;d++){
-      if(!dayOn(cs,w,d))continue;
-      scaledDay(dayDate(cs,w,d),ids[w][d]).meals.forEach(m=>Object.entries(m.shop).forEach(([k,q])=>{needs[k]=(needs[k]||0)+q}));
+      const mask=dayMask(cs,w,d);
+      if(!mask.some(Boolean))continue;
+      scaledDay(dayDate(cs,w,d),ids[w][d],mask).meals.forEach((m,s)=>{if(mask[s])Object.entries(m.shop).forEach(([k,q])=>{needs[k]=(needs[k]||0)+q})});
     }
     Object.entries(needs).forEach(([k,need])=>{
       const f=FOODS[k],avail=inv[k]||0,deficit=Math.max(0,need-avail);
@@ -426,13 +436,12 @@ function optimizeIds(cs,base){
   for(let it=0;it<30&&cost>budget*0.98;it++){
     let best=null;
     for(let w=0;w<4;w++)for(let d=0;d<5;d++){
-      if(!dayOn(cs,w,d))continue;
       for(let s=0;s<3;s++){
-        if(state.swaps[`${cs}|${w}|${d}|${s}`])continue;
+        if(!mealOn(cs,w,d,s)||state.swaps[`${cs}|${w}|${d}|${s}`])continue;
         const cur=ids[w][d][s];
         for(const m of SLOTS[s].pool){
           if(m.id===cur)continue;
-          let dup=false;for(let d2=0;d2<5;d2++)if(d2!==d&&dayOn(cs,w,d2)&&ids[w][d2][s]===m.id)dup=true;
+          let dup=false;for(let d2=0;d2<5;d2++)if(d2!==d&&mealOn(cs,w,d2,s)&&ids[w][d2][s]===m.id)dup=true;
           if(dup)continue;
           ids[w][d][s]=m.id;const c=planCost(cs,ids);ids[w][d][s]=cur;
           if(!best||c<best.c)best={w,d,s,id:m.id,c};
@@ -454,17 +463,18 @@ function idAt(cs,w,d,s){
   return MEAL_BY_ID[sw]?sw:cycleIds(cs).ids[w][d][s];
 }
 const mealSwapped=(cs,w,d,s)=>{const sw=state.swaps[`${cs}|${w}|${d}|${s}`];return !!(MEAL_BY_ID[sw]&&sw!==planFor(cs).weeks[w][d][s])};
+// meals : les 3 repas du jour ; on[s] : le repas est gardé ; tot et target ne comptent que les repas gardés
 function dayPlan(cs,w,d){
-  const date=dayDate(cs,w,d),sd=scaledDay(date,[0,1,2].map(s=>idAt(cs,w,d,s)));
-  const tot=sd.meals.reduce((a,m)=>({kcal:a.kcal+m.kcal,prot:a.prot+m.protein,cost:a.cost+m.cost}),{kcal:0,prot:0,cost:0});
-  return{date,f:sd.f,meals:sd.meals,tot,target:targetKcal(date),on:dayOn(cs,w,d)};
+  const date=dayDate(cs,w,d),mask=dayMask(cs,w,d),sd=scaledDay(date,[0,1,2].map(s=>idAt(cs,w,d,s)),mask);
+  const tot=sd.meals.reduce((a,m,s)=>mask[s]?{kcal:a.kcal+m.kcal,prot:a.prot+m.protein,cost:a.cost+m.cost}:a,{kcal:0,prot:0,cost:0});
+  return{date,f:sd.f,meals:sd.meals,tot,on:mask,any:mask.some(Boolean),target:Math.round(targetKcal(date)*sd.share),fullTarget:targetKcal(date),dayOff:!dayOn(cs,w,d)};
 }
 
 function weekNeeds(cs,w){
   const t={};
   for(let d=0;d<5;d++){
-    if(!dayOn(cs,w,d))continue;
-    dayPlan(cs,w,d).meals.forEach(m=>Object.entries(m.shop).forEach(([k,v])=>{t[k]=(t[k]||0)+v}));
+    const P=dayPlan(cs,w,d);
+    P.meals.forEach((m,s)=>{if(P.on[s])Object.entries(m.shop).forEach(([k,v])=>{t[k]=(t[k]||0)+v})});
   }
   return t;
 }
@@ -495,6 +505,18 @@ function fmtQty(k,v){
 }
 const buyText=(k,p)=>FOODS[k].loose?`${p.units} ${p.units>1?FOODS[k].pack.toLowerCase():FOODS[k].pack.toLowerCase().replace(/s$/,'')}`:`${p.units} × ${FOODS[k].packLabel}`;
 function cycleSpend(cs){const end=addDays(cs,27);return state.spend.filter(x=>x.d>=cs&&x.d<=end).reduce((a,x)=>a+x.a,0)}
+// reste sur le budget initial à la fin du cycle : budget - le plus grand des achats prévus (liste ajustée) et de ce qui est déjà dépensé
+function budgetLeft(cs){
+  const planned=purchasePlan(cs).total,spent=cycleSpend(cs),init=state.goals.budget;
+  return{init,planned,spent,left:init-Math.max(planned,spent)};
+}
+// retire / remet un jour ou un repas, puis annonce l'effet sur les courses et sur le reste du budget
+function changePlan(cs,fn){
+  const b=budgetLeft(cs);fn();bump();save();
+  const a=budgetLeft(cs),d=a.planned-b.planned;
+  keepScroll(render);
+  toast(`${Math.abs(d)<0.005?'Liste de courses mise à jour':'Courses '+(d<0?'−':'+')+euro(Math.abs(d))} · il te reste ${euro(a.left)} sur ton budget`);
+}
 
 /* ---------- Eau, repas cochés, ajouts ---------- */
 const QUICK=[
@@ -503,7 +525,7 @@ const QUICK=[
 ];
 function eatenOf(date,plan){
   const e={kcal:0,prot:0,cost:0};
-  plan.meals.forEach((m,s)=>{if(state.checks[`${date}|${s}`]){e.kcal+=m.kcal;e.prot+=m.protein;e.cost+=m.cost}});
+  plan.meals.forEach((m,s)=>{if(plan.on[s]&&state.checks[`${date}|${s}`]){e.kcal+=m.kcal;e.prot+=m.protein;e.cost+=m.cost}});
   (state.extras[date]||[]).forEach(x=>{e.kcal+=x.k;e.prot+=x.p;e.cost+=x.c});
   return e;
 }
@@ -562,27 +584,28 @@ function renderToday(){
     <p class="muted gap">D’ici là, tu peux déjà régler ton objectif, regarder les menus du premier cycle et préparer la liste de courses.</p>
     <div class="btns"><button class="btn gold" data-act="goto" data-tab="goal">Mon objectif</button><button class="btn" data-act="goto" data-tab="menus">Menus</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`;
   }
-  const cs=cycleStart(p.k),di=d-1,act=ACT[d],plan=dayPlan(cs,p.week,di),goalK=plan.target,goalP=targetProtein();
+  const cs=cycleStart(p.k),di=d-1,act=ACT[d],plan=dayPlan(cs,p.week,di),goalK=plan.fullTarget,goalP=targetProtein();
   let h=profileBanner();
   h+=`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>${esc(act.n)}</h2>
     <div style="margin-top:6px">${chip('Cycle '+(p.k+1)+' · semaine '+(p.week+1)+'/4')}${chip(act.k==='force'?'Jour de force':'Jour de course','plain')}</div>
     <div class="small muted gap">Objectif du jour : <b>${kc(goalK)} kcal</b> · <b>${kc(goalP)} g</b> de protéines${auto()?' (calculé pour ton profil)':''}</div></section>`;
-  if(!plan.on){
-    return h+`<section class="card"><h3>Jour non planifié</h3><p class="muted gap">Tu as décoché ce jour : pas de repas prévu, rien dans la liste de courses, et ton budget en tient compte.</p><div class="btns"><button class="btn gold" data-act="dayon" data-k="${cs}|${p.week}|${di}">Replanifier ce jour</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`+goalCards(today);
+  if(!plan.any){
+    return h+`<section class="card"><h3>Jour non planifié</h3><p class="muted gap">Tu as retiré ce jour (ou tous ses repas) : pas de repas prévu, rien dans la liste de courses, et ton budget en tient compte.</p><div class="btns"><button class="btn gold" data-act="dayon" data-k="${cs}|${p.week}|${di}">Replanifier ce jour</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`+goalCards(today);
   }
-  const E=eatenOf(today,plan),spent=cycleSpend(cs),bud=cycleBudget(cs),eatenMeals=[0,1,2].filter(s=>state.checks[`${today}|${s}`]).length;
+  const bl=budgetLeft(cs),E=eatenOf(today,plan),spent=cycleSpend(cs),bud=cycleBudget(cs),nPlanned=plan.on.filter(Boolean).length,eatenMeals=[0,1,2].filter(s=>plan.on[s]&&state.checks[`${today}|${s}`]).length;
   const water=state.water[today]||0,wGoal=state.goals.water,remK=Math.max(0,goalK-E.kcal),remP=Math.max(0,goalP-E.prot);
-  h+=`<section class="card"><div class="rb"><h3>Mes objectifs du jour</h3><span class="small muted">${eatenMeals}/3 repas cochés</span></div>
+  h+=`<section class="card"><div class="rb"><h3>Mes objectifs du jour</h3><span class="small muted">${eatenMeals}/${nPlanned} repas cochés</span></div>
     <div class="rings gap">
       <div>${ring(E.kcal/goalK,E.kcal>goalK*1.08?'#ff5a63':'#f5c518',kc(E.kcal),'/ '+kc(goalK)+' kcal')}<div class="ringcap">Calories</div></div>
       <div>${ring(E.prot/goalP,E.prot>=goalP?'#58d39b':'#f5c518',kc(E.prot)+' g','/ '+kc(goalP)+' g')}<div class="ringcap">Protéines</div></div>
     </div>
-    <div class="small muted gap" style="text-align:center">${E.kcal===0?'Coche tes repas au fil de la journée.':(remK>0||remP>0?`Il te reste <b>${kc(remK)} kcal</b> et <b>${kc(remP)} g</b> de protéines pour atteindre tes objectifs.`:'Objectifs du jour atteints.')}</div>
+    <div class="small muted gap" style="text-align:center">${E.kcal===0?'Coche tes repas au fil de la journée.':(remK>0||remP>0?`Il te reste <b>${kc(remK)} kcal</b> et <b>${kc(remP)} g</b> de protéines pour atteindre tes objectifs.`:'Objectifs du jour atteints.')}${nPlanned<3?' Pour un repas retiré, note ce que tu manges ailleurs avec « Ajout libre ».':''}</div>
     <div class="gap"><div class="rb small"><span>💧 Eau</span><span><b>${fmtN(water/1000)} L</b> / ${fmtN(wGoal/1000)} L</span></div>${bar(water/wGoal,'blue')}
     <div class="btns"><button class="btn sm" data-act="water" data-v="-250">− 250 ml</button><button class="btn sm gold" data-act="water" data-v="250">+ 250 ml</button><button class="btn sm" data-act="water" data-v="500">+ 500 ml</button></div></div>
-    <div class="gap"><div class="rb small"><span>🛒 Budget du cycle (${cycleDays(cs)} jours)</span><span><b>${euro(spent)}</b> / ${euro(bud)}</span></div>${bar(bud>0?spent/bud:0)}</div></section>`;
-  h+=`<section class="card"><div class="rb"><h3>Repas du jour</h3><span class="small muted">${kc(plan.tot.kcal)} kcal · ${kc(plan.tot.prot)} g</span></div>${fText(plan.f)?`<div class="small muted">${fText(plan.f)} pour atteindre ${kc(goalK)} kcal</div>`:''}`;
-  plan.meals.forEach((m,s)=>{h+=mealRow(m,s,today,cs,p.week,di)});
+    <div class="gap"><div class="rb small"><span>🛒 Budget du cycle (${cycleMeals(cs)} repas)</span><span><b>${euro(spent)}</b> / ${euro(bud)}</span></div>${bar(bud>0?spent/bud:0)}
+    <div class="small muted" style="margin-top:6px">${bl.left>=0?`Reste prévu à la fin du cycle : <b class="ok">${euro(bl.left)}</b> sur ton budget initial de ${euro(bl.init)}.`:`Dépassement prévu : <b class="bad">${euro(-bl.left)}</b> au-delà de ton budget initial de ${euro(bl.init)}.`}</div></div></section>`;
+  h+=`<section class="card"><div class="rb"><h3>Repas du jour</h3><span class="small muted">${kc(plan.tot.kcal)} kcal · ${kc(plan.tot.prot)} g</span></div>${fText(plan.f)?`<div class="small muted">${fText(plan.f)} pour atteindre ${kc(plan.target)} kcal</div>`:''}`;
+  plan.meals.forEach((m,s)=>{h+=mealRow(m,s,today,cs,p.week,di,'eat')});
   h+=`<div class="quick">${QUICK.map((q,i)=>`<button type="button" data-act="quick" data-i="${i}">+ ${esc(q.n)}</button>`).join('')}</div>
     <div class="small muted" style="margin-top:6px">Touche un ajout pour l’ajouter aux totaux du jour (quantités approximatives).</div>`;
   const ex=state.extras[today]||[];
@@ -605,19 +628,27 @@ function renderWeekend(today){
   if(p.upcoming){
     return h+`<section class="card"><p>Ton cycle commence le <b>${dLong(state.start).toLowerCase()}</b>.</p><div class="btns"><button class="btn gold" data-act="goto" data-tab="shop">Liste de courses</button><button class="btn" data-act="goto" data-tab="goal">Mon objectif</button></div></section>`;
   }
-  const n=daysOn(cs,p.week);
-  h+=`<section class="card"><div class="rb"><h3>Semaine du ${dShort(next)}</h3>${chip(n+' jour'+(n>1?'s':'')+' planifié'+(n>1?'s':''),n===5?'good':'warn')}</div>
-    <p class="muted small gap">Coche les jours où tu veux des repas à la maison : les courses et le budget s’adaptent (${euro(budgetPerDay())} par jour planifié).</p>
-    <div class="days">${[0,1,2,3,4].map(d=>`<button type="button" data-act="dayon" data-k="${cs}|${p.week}|${d}" class="${dayOn(cs,p.week,d)?'on':''}">${['Lun','Mar','Mer','Jeu','Ven'][d]}<small>${dayOn(cs,p.week,d)?'✓':'—'}</small></button>`).join('')}</div>
+  const n=daysOn(cs,p.week),m=weekMeals(cs,p.week);
+  h+=`<section class="card"><div class="rb"><h3>Semaine du ${dShort(next)}</h3>${chip(m+' / 15 repas',m===15?'good':'warn')}</div>
+    <p class="muted small gap">Touche les jours où tu veux des repas à la maison (et décoche des repas seuls dans les menus) : les courses et le budget s’adaptent (${euro(budgetPerMeal())} par repas). ${n} jour${n>1?'s':''} planifié${n>1?'s':''}.</p>
+    ${dayButtons(cs,p.week)}
     <div class="btns"><button class="btn gold" data-act="goto" data-tab="shop">Ouvrir la liste de courses</button><button class="btn" data-act="goto" data-tab="menus">Voir les menus</button></div></section>`;
   h+=goalCards(today)+`<section class="card"><div class="eyebrow">Conseil</div><p class="gap">${esc(tipOfDay(today))}</p></section>`;
   return h;
 }
-function mealRow(m,s,date,cs,w,di){
-  const k=`${date}|${s}`,on=!!state.checks[k],sw=mealSwapped(cs,w,di,s);
-  return `<div class="meal ${on?'done':''}"><input class="chk" type="checkbox" data-chg="meal" data-k="${k}" ${on?'checked':''} aria-label="Repas mangé">
-    <div><div class="t">${SLOTS[s].ico} ${SLOTS[s].name}${sw?' · remplacé':''}</div><button class="n" data-act="recipe" data-id="${m.id}" data-f="${m.f}">${esc(m.name)}</button><div class="m">${m.kcal} kcal · <b>${m.protein} g</b> de protéines</div></div>
-    <div class="c">${euro(m.cost)}<button class="sw" data-act="swap" data-cs="${cs}" data-w="${w}" data-d="${di}" data-s="${s}">↻ changer</button></div></div>`;
+// mode 'plan' (onglet Menus) : la case = « au menu », la décocher retire le repas des courses et du budget
+// mode 'eat' (onglet Aujourd'hui) : la case = « mangé » ; « Retirer » retire le repas des courses et du budget
+function mealRow(m,s,date,cs,w,di,mode){
+  const mk=`${cs}|${w}|${di}|${s}`,planned=mealOn(cs,w,di,s),sw=mealSwapped(cs,w,di,s);
+  const head=`<div class="t">${SLOTS[s].ico} ${SLOTS[s].name}${sw?' · remplacé':''}</div><button class="n" data-act="recipe" data-id="${m.id}" data-f="${m.f}">${esc(m.name)}</button>`;
+  const change=`<button class="sw" data-act="swap" data-cs="${cs}" data-w="${w}" data-d="${di}" data-s="${s}">↻ changer</button>`;
+  if(!planned){
+    return `<div class="meal done">${mode==='plan'?`<input class="chk" type="checkbox" data-chg="mealon" data-k="${mk}" aria-label="Remettre au menu">`:'<span></span>'}<div>${head}<div class="m">Retiré : plus dans les courses ni dans le budget</div></div><div class="c"><button class="sw" data-act="mealtoggle" data-k="${mk}">Remettre</button></div></div>`;
+  }
+  const info=`<div class="m">${m.kcal} kcal · <b>${m.protein} g</b> de protéines</div>`;
+  if(mode==='plan')return `<div class="meal"><input class="chk" type="checkbox" data-chg="mealon" data-k="${mk}" checked aria-label="Au menu : décocher pour retirer des courses"><div>${head}${info}</div><div class="c">${euro(m.cost)}${change}</div></div>`;
+  const k=`${date}|${s}`,on=!!state.checks[k];
+  return `<div class="meal ${on?'done':''}"><input class="chk" type="checkbox" data-chg="meal" data-k="${k}" ${on?'checked':''} aria-label="Repas mangé"><div>${head}${info}</div><div class="c">${euro(m.cost)}${change}<button class="sw" data-act="mealtoggle" data-k="${mk}">Retirer</button></div></div>`;
 }
 
 /* --- Menus --- */
@@ -628,27 +659,30 @@ function cycleNav(c){
 function weekSeg(c){
   return `<div class="seg">${[0,1,2,3].map(i=>`<button type="button" data-act="week" data-w="${i}" class="${c.w===i?'on':''}">Semaine ${i+1}<small>${dShort(dayDate(c.cs,i,0))} – ${dShort(dayDate(c.cs,i,4))}</small></button>`).join('')}</div>`;
 }
+function dayButtons(cs,w){
+  return `<div class="days">${[0,1,2,3,4].map(d=>{const k=dayMask(cs,w,d).filter(Boolean).length;return `<button type="button" data-act="dayon" data-k="${cs}|${w}|${d}" class="${k?'on':''}">${['Lun','Mar','Mer','Jeu','Ven'][d]}<small>${k===3?'✓':k?k+'/3':'—'}</small></button>`}).join('')}</div>`;
+}
 function dayToggles(c){
-  const n=daysOn(c.cs,c.w);
-  return `<div class="card"><div class="rb"><h3>Jours planifiés</h3>${chip(n+' / 5',n===5?'good':'warn')}</div>
-    <div class="days">${[0,1,2,3,4].map(d=>`<button type="button" data-act="dayon" data-k="${c.cs}|${c.w}|${d}" class="${dayOn(c.cs,c.w,d)?'on':''}">${['Lun','Mar','Mer','Jeu','Ven'][d]}<small>${dayOn(c.cs,c.w,d)?'✓':'—'}</small></button>`).join('')}</div>
-    <div class="small muted gap">Décoche un jour (restaurant, repas ailleurs…) : ses repas disparaissent des courses et son budget (${euro(budgetPerDay())}) est retiré. Budget de la semaine : <b>${euro(budgetPerDay()*n)}</b>.</div></div>`;
+  const n=daysOn(c.cs,c.w),m=weekMeals(c.cs,c.w);
+  return `<div class="card"><div class="rb"><h3>Jours et repas planifiés</h3>${chip(m+' / 15 repas',m===15?'good':'warn')}</div>
+    ${dayButtons(c.cs,c.w)}
+    <div class="small muted gap">Touche un jour pour le retirer ou le remettre, ou décoche un repas seul dans les menus (restaurant, repas ailleurs…) : il disparaît des courses et son budget (${euro(budgetPerMeal())} par repas) est retiré. ${n} jour${n>1?'s':''}, ${m} repas : budget de la semaine <b>${euro(budgetPerMeal()*m)}</b>.</div></div>`;
 }
 function renderMenus(){
   ensureStart();
   const c=uiCycle(),cs=c.cs,today=todayKey();
-  let h=cycleNav(c)+weekSeg(c)+dayToggles(c);
+  let h=cycleNav(c)+weekSeg(c)+dayToggles(c)+`<div class="note">La case de chaque repas veut dire « au menu » : décoche-la pour retirer ce repas des courses et du budget. Pour noter ce que tu as mangé, va dans Aujourd’hui.</div>`;
   const info=cycleIds(cs).info;
   if(info.changed>0)h+=`<div class="okbox">Menus ajustés au budget : ${info.changed} repas remplacés par des recettes moins chères pour tenir ${euro(cycleBudget(cs))}.</div>`;
   let wk={kcal:0,prot:0,cost:0},nOn=0;
   for(let d=0;d<5;d++){
     const P=dayPlan(cs,c.w,d),act=actOf(P.date);
-    h+=`<section class="card ${P.date===today?'hero':''} ${P.on?'':'off'}"><div class="rb"><h2>${dLong(P.date)}</h2>${P.date===today?chip("Aujourd’hui",'good'):''}</div>
+    h+=`<section class="card ${P.date===today?'hero':''} ${P.any?'':'off'}"><div class="rb"><h2>${dLong(P.date)}</h2>${P.date===today?chip("Aujourd’hui",'good'):''}</div>
       <div class="small muted" style="margin:3px 0 4px">${act.k==='force'?'💪':'🏃'} ${esc(act.n)}</div>`;
-    if(!P.on){h+=`<p class="muted small">Jour non planifié : pas de repas ni de courses.</p><div class="btns"><button class="btn sm" data-act="dayon" data-k="${cs}|${c.w}|${d}">Replanifier</button></div></section>`;continue}
+    if(!P.any){h+=`<p class="muted small">Jour non planifié : pas de repas ni de courses.</p><div class="btns"><button class="btn sm" data-act="dayon" data-k="${cs}|${c.w}|${d}">Replanifier</button></div></section>`;continue}
     nOn++;wk.kcal+=P.tot.kcal;wk.prot+=P.tot.prot;wk.cost+=P.tot.cost;
-    P.meals.forEach((m,s)=>{h+=mealRow(m,s,P.date,cs,c.w,d)});
-    const dk=P.tot.kcal-P.target,dp=P.tot.prot-targetProtein();
+    P.meals.forEach((m,s)=>{h+=mealRow(m,s,P.date,cs,c.w,d,'plan')});
+    const dk=P.tot.kcal-P.target,dp=P.tot.prot-targetProtein()*SHARE.reduce((a,v,s)=>a+(P.on[s]?v:0),0);
     h+=`<div class="small muted" style="margin-top:8px"><b>${kc(P.tot.kcal)} kcal</b> (cible ${kc(P.target)} : ${gapText(dk,'kcal',60)}) · <b>${kc(P.tot.prot)} g</b> de protéines (${gapText(dp,'g',8)}) · ${euro(P.tot.cost)}${fText(P.f)?` · ${fText(P.f)}`:''}</div></section>`;
   }
   h+=`<section class="card"><h3>Résumé de la semaine ${c.w+1}</h3>${nOn?`<div class="kv"><span>Jours planifiés</span><span>${nOn} / 5</span><span>Moyenne par jour</span><span>${kc(wk.kcal/nOn)} kcal · ${kc(wk.prot/nOn)} g</span><span>Coût des repas</span><span>${euro(wk.cost)}</span></div>`:'<p class="muted small gap">Aucun jour planifié cette semaine.</p>'}</section>`;
@@ -658,21 +692,25 @@ function renderMenus(){
 /* --- Courses et budget --- */
 function renderShop(){
   ensureStart();
-  const c=uiCycle(),cs=c.cs,pp=purchasePlan(cs),wk=pp.weeks[c.w],bud=cycleBudget(cs),nDays=cycleDays(cs),spent=cycleSpend(cs);
+  const c=uiCycle(),cs=c.cs,pp=purchasePlan(cs),wk=pp.weeks[c.w],bud=cycleBudget(cs),nDays=cycleDays(cs),nMeals=cycleMeals(cs),spent=cycleSpend(cs);
   let h=cycleNav(c);
-  h+=`<section class="card hero"><div class="rb"><h2>Budget du cycle</h2>${chip(nDays===0?'aucun jour':pp.total<=bud+0.005?'dans le budget':'au-dessus',nDays===0?'plain':pp.total<=bud+0.005?'good':'red')}</div>
-    <div class="kv"><span>Jours planifiés</span><span>${nDays} / 20</span><span>Budget par jour planifié</span><span>${euro(budgetPerDay())}</span><span>Budget du cycle</span><span>${euro(bud)}</span><span>Courses prévues</span><span>${euro(pp.total)}</span><span>Dépensé réellement</span><span>${euro(spent)}</span><span>Reste sur le budget</span><span class="${bud-spent<0?'bad':'ok'}">${euro(bud-spent)}</span></div>
-    <div class="small muted gap">Dépensé réel</div>${bar(bud>0?spent/bud:0)}
-    <div class="small muted" style="margin-top:6px">Courses prévues</div>${bar(bud>0?pp.total/bud:0,'blue')}
-    <div class="small muted gap">Le budget est dégressif : ${euro(state.goals.budget)} pour 20 jours, soit ${euro(budgetPerDay())} par jour planifié ; chaque jour décoché retire sa part.</div>
+  const init=state.goals.budget,left=init-Math.max(pp.total,spent);
+  h+=`<section class="card hero"><div class="rb"><h2>Budget du cycle</h2>${chip(nMeals===0?'aucun repas':pp.total<=bud+0.005?'dans le budget':'au-dessus',nMeals===0?'plain':pp.total<=bud+0.005?'good':'red')}</div>
+    <div class="eyebrow gap">Reste à la fin du cycle</div><div class="big ${left>=0?'ok':'bad'}">${euro(left)}</div>
+    <div class="small muted">${left>=0?`sur ton budget initial de ${euro(init)}`:`de dépassement sur ton budget initial de ${euro(init)}`}. La liste de courses se recalcule dès que tu retires un jour ou un repas : ce que tu économises s’ajoute à ce reste.</div>
+    <div class="kv"><span>Budget initial</span><span>${euro(init)}</span><span>Courses prévues (liste ajustée)</span><span>${euro(pp.total)}</span><span>Dépensé réellement</span><span>${euro(spent)}</span><span>Repas planifiés</span><span>${nMeals} / 60 (${nDays} jours)</span><span>Budget ajusté à ces repas</span><span>${euro(bud)}</span><span>Reste sur le budget ajusté</span><span class="${bud-Math.max(pp.total,spent)<0?'bad':'ok'}">${euro(bud-Math.max(pp.total,spent))}</span></div>
+    <div class="small muted gap">Dépensé réel</div>${bar(init>0?spent/init:0)}
+    <div class="small muted" style="margin-top:6px">Courses prévues</div>${bar(init>0?pp.total/init:0,'blue')}
+    <div class="small muted gap">Le budget ajusté est dégressif : ${euro(init)} pour 60 repas, soit ${euro(budgetPerMeal())} par repas (${euro(budgetPerDay())} par jour de 3 repas) ; chaque jour ou repas décoché retire sa part.</div>
     <details class="gap"><summary>Noter une dépense</summary><div class="grid2 gap"><label class="f">Montant (€)<input id="sa" inputmode="decimal" placeholder="45,20"></label><label class="f">Magasin / note<input id="sl" type="text" placeholder="Courses semaine 1"></label></div><button class="btn sm gold gap" data-act="spend-add">Ajouter</button></details>
     ${state.spend.filter(x=>x.d>=cs&&x.d<=addDays(cs,27)).sort((a,b)=>a.d<b.d?1:-1).map(x=>`<div class="exrow" style="grid-template-columns:62px 1fr auto auto"><span class="d">${dShort(x.d)}</span><span>${esc(x.l||'Courses')}</span><b>${euro(x.a)}</b><button type="button" data-act="spend-del" data-id="${x.id}" aria-label="Supprimer">✕</button></div>`).join('')}</section>`;
   const info=cycleIds(cs).info;
   if(info.changed>0)h+=`<div class="okbox">Menus ajustés au budget : ${info.changed} repas remplacés par des recettes moins chères (de ${euro(info.before)} à ${euro(info.after)}).</div>`;
-  else if(nDays>0&&pp.total>bud+0.005)h+=`<div class="warnbox">Même avec les recettes les moins chères, les courses dépassent le budget de ${euro(pp.total-bud)}. Planifie moins de jours ou augmente le budget dans les réglages.</div>`;
+  else if(nMeals>0&&pp.total>bud+0.005)h+=`<div class="warnbox">Même avec les recettes les moins chères, les courses dépassent le budget de ${euro(pp.total-bud)}. Retire des jours ou des repas, ou augmente le budget dans les réglages.</div>`;
   h+=weekSeg(c)+dayToggles(c);
-  const nOn=daysOn(cs,c.w);
-  h+=`<section class="card"><div class="rb"><h2>Semaine ${c.w+1}</h2><b>${euro(wk.cost)}</b></div><div class="small muted">${nOn?`${nOn} jour${nOn>1?'s':''} du ${dShort(dayDate(cs,c.w,0))} au ${dShort(dayDate(cs,c.w,4))} — les restes des semaines précédentes sont déjà déduits. Ce que tu gardes en stock sert aux semaines suivantes.`:'Aucun jour planifié : rien à acheter cette semaine.'}</div></section>`;
+  const nOn=daysOn(cs,c.w),mOn=weekMeals(cs,c.w);
+  const cum=pp.weeks.slice(0,c.w+1).reduce((a,x)=>a+x.cost,0);
+  h+=`<section class="card"><div class="rb"><h2>Semaine ${c.w+1}</h2><b>${euro(wk.cost)}</b></div><div class="small muted">Après cette semaine, il te reste <b class="${init-cum>=0?'ok':'bad'}">${euro(init-cum)}</b> sur ton budget initial.</div><div class="small muted" style="margin-top:6px">${mOn?`${mOn} repas sur ${nOn} jour${nOn>1?'s':''}, du ${dShort(dayDate(cs,c.w,0))} au ${dShort(dayDate(cs,c.w,4))} — les restes des semaines précédentes sont déjà déduits. Ce que tu gardes en stock sert aux semaines suivantes.`:'Aucun repas planifié : rien à acheter cette semaine.'}</div></section>`;
   const keys=Object.keys(wk.needs),buy=keys.filter(k=>wk.buys[k].units>0),stock=keys.filter(k=>wk.buys[k].units===0);
   const rowFor=k=>{
     const p=wk.buys[k],f=FOODS[k],ck=`${cs}|${c.w}|${k}`,on=!!state.shop[ck];
@@ -701,9 +739,11 @@ function sparkline(){
 function plannedWeekly(cs,E){
   let kcal=0;
   for(let w=0;w<4;w++)for(let d=0;d<5;d++){
-    if(!dayOn(cs,w,d))continue;
+    // l'écart s'applique à la part de la journée qui reste au menu
+    const share=dayMask(cs,w,d).reduce((a,v,s)=>a+(v?SHARE[s]:0),0);
+    if(!share)continue;
     const date=dayDate(cs,w,d),k=ACT[dow(date)].k;
-    kcal+=E.targets[k]-E.tdee[k];
+    kcal+=(E.targets[k]-E.tdee[k])*share;
   }
   return kcal/4/7700;
 }
@@ -783,7 +823,7 @@ function recipeBody(m){
 }
 function weekMealIds(){
   const c=uiCycle(),ids=new Set();
-  for(let d=0;d<5;d++)for(let s=0;s<3;s++)if(dayOn(c.cs,c.w,d))ids.add(idAt(c.cs,c.w,d,s));
+  for(let d=0;d<5;d++)for(let s=0;s<3;s++)if(mealOn(c.cs,c.w,d,s))ids.add(idAt(c.cs,c.w,d,s));
   return ids;
 }
 function recipeListHtml(){
@@ -811,7 +851,7 @@ function renderSettings(){
     <label class="small muted gap" style="display:flex;gap:8px;align-items:center"><input class="chk" style="width:22px;height:22px" type="checkbox" data-chg="goalauto" ${g.auto?'checked':''}>Calculer calories et protéines depuis mon profil (onglet Objectif)</label>
     <div class="grid2 gap"><label class="f">Calories / jour (mode fixe)<input inputmode="numeric" data-chg="goal" data-k="kcal" value="${g.kcal}"></label>
     <label class="f">Protéines / jour (mode fixe, g)<input inputmode="numeric" data-chg="goal" data-k="protein" value="${g.protein}"></label></div>
-    <p class="small muted gap">Le budget est réparti par jour planifié (${euro(budgetPerDay())} par jour). Les objectifs fixes servent tant que le profil est incomplet ou que le calcul automatique est décoché.</p></section>
+    <p class="small muted gap">Le budget est réparti par repas planifié (${euro(budgetPerMeal())} par repas, ${euro(budgetPerDay())} par jour de 3 repas). Les objectifs fixes servent tant que le profil est incomplet ou que le calcul automatique est décoché.</p></section>
   <section class="card"><h3>Dépense des séances</h3><p class="small muted">Calories brûlées par kg de poids de corps pendant une séance (réglage avancé).</p><div class="grid2 gap">
     <label class="f">Jour de force (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgForce" value="${fmtN(state.profile.kgForce,1)}"></label>
     <label class="f">Jour de course (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgCourse" value="${fmtN(state.profile.kgCourse,1)}"></label></div></section>
@@ -877,7 +917,15 @@ view.addEventListener('click',e=>{
     case 'swap':openSwap(D.cs,+D.w,+D.d,+D.s);break;
     case 'cyc':{const c=uiCycle();ui.k=Math.max(0,c.k+Number(D.v));ui.week=0;render();break}
     case 'week':ui.week=+D.w;keepScroll(render);break;
-    case 'dayon':{if(state.off[D.k])delete state.off[D.k];else state.off[D.k]=true;bump();save();keepScroll(render);break}
+    case 'dayon':{
+      // jour gardé -> retiré ; jour retiré (ou sans aucun repas) -> remis en entier avec ses 3 repas
+      const [dcs,dw,dd]=D.k.split('|');
+      changePlan(dcs,()=>{
+        if(dayActive(dcs,+dw,+dd))state.off[D.k]=true;
+        else{delete state.off[D.k];[0,1,2].forEach(s=>delete state.offMeal[`${D.k}|${s}`])}
+      });break;
+    }
+    case 'mealtoggle':changePlan(D.k.split('|')[0],()=>{if(state.offMeal[D.k])delete state.offMeal[D.k];else state.offMeal[D.k]=true});break;
     case 'water':{const d=todayKey();state.water[d]=Math.max(0,Math.min(10000,(state.water[d]||0)+Number(D.v)));save();keepScroll(render);break}
     case 'quick':{const q=QUICK[+D.i],d=todayKey();(state.extras[d]??=[]).push({n:q.n,k:q.k,p:q.p,c:q.c});save();keepScroll(render);toast('Ajouté : '+q.n);break}
     case 'extra-add':{
@@ -940,6 +988,7 @@ view.addEventListener('change',e=>{
   const a=t.dataset.chg,k=t.dataset.k;
   switch(a){
     case 'meal':if(t.checked)state.checks[k]=true;else delete state.checks[k];save();keepScroll(render);break;
+    case 'mealon':changePlan(k.split('|')[0],()=>{if(t.checked)delete state.offMeal[k];else state.offMeal[k]=true});break;
     case 'shop':if(t.checked)state.shop[k]=true;else delete state.shop[k];save();keepScroll(render);break;
     case 'goal':{
       const v=num(t.value),min={budget:50,kcal:1200,protein:60,water:500}[k];
