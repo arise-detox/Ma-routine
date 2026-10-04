@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a2457">
+<title>Ma Routine — Nutrition</title>
+<meta name="description" content="Menus et listes de courses du lundi au vendredi, calculés selon tes séances ROAD TO GI, ton poids et ton budget.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ma Routine">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<style>
+/* Thème GIGN, identique à ROAD TO GI : bleu roi, or, rouge, blanc */
+:root{--bg:#0a2457;--surface:#133a85;--surface2:#1b4a9e;--line:#3a69c4;--text:#fff;--muted:#b7c8f0;--gold:#f5c518;--red:#d9232d;--blue:#2f64c8;--good:#58d39b;--warn:#f2bb5f;--danger:#ff5a63;--navh:64px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#071d4b}
+body{margin:0;color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;background:linear-gradient(180deg,#0d2d6b 0,#0a2457 40%,#071d4b 100%) no-repeat #071d4b;min-height:100vh;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+h1,h2,h3,p{margin:0}
+.app{max-width:820px;margin:0 auto;padding:0 14px calc(var(--navh) + 40px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:20;margin:0 -14px 8px;padding:calc(10px + env(safe-area-inset-top)) 14px 14px;background:rgba(8,29,74,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;align-items:center;gap:12px}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(var(--red) 0 50%,var(--gold) 50% 100%)}
+.brandmark{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:14px;letter-spacing:.5px;color:#fff;background:radial-gradient(circle at 50% 36%,#4a82e6 0,#2f64c8 38%,#14357a 100%);border:3px solid var(--gold);box-shadow:0 0 0 2px var(--red),0 0 0 3.5px #fff,0 3px 10px rgba(0,0,0,.5);margin-right:3px;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.top .ttl{flex:1;min-width:0}
+.top h1{font-size:19px;line-height:1.15}
+.top small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{flex:none;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:19px;line-height:1}
+.iconbtn.on{border-color:var(--gold);background:var(--surface2)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.card.hero{border-color:var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.card.off{opacity:.62}
+.card h2{font-size:18px}
+.card h3{font-size:16px}
+.rb{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.gap{margin-top:10px}
+.eyebrow{color:var(--gold);font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase}
+.chip{display:inline-block;border:1px solid rgba(245,197,24,.55);background:#0b2860;color:var(--gold);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;margin:2px 4px 2px 0;white-space:nowrap}
+.chip.red{border-color:#ff6b73;color:#ffb3b8}
+.chip.good{border-color:var(--good);color:var(--good)}
+.chip.warn{border-color:var(--warn);color:var(--warn)}
+.chip.plain{border-color:var(--line);color:#dbe6ff}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:700;color:#fff;text-decoration:none;display:inline-block;text-align:center}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#13203f;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn.red{background:#8e1a22;border-color:#ff6b73}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+input,select,textarea{width:100%;background:#0a2457;border:1px solid var(--line);border-radius:11px;padding:10px;font-size:16px;color:#fff}
+input[type=checkbox]{width:auto}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px}
+::placeholder{color:#8fa6d8;opacity:1}
+input[type=date]{min-height:44px}
+label.f{display:block;font-size:12px;color:var(--muted)}
+label.f input,label.f select{margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.chk{-webkit-appearance:none;appearance:none;flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--gold);background:#0a2457;position:relative;margin:0}
+.chk:checked{background:var(--gold)}
+.chk:checked::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#13203f;font-weight:900;font-size:16px}
+.bar{height:10px;background:#0a2457;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#ffd84d);border-radius:99px}
+.bar.over>i{background:linear-gradient(90deg,var(--red),var(--danger))}
+.bar.blue>i{background:linear-gradient(90deg,#4a82e6,#8fb4ff)}
+.rings{display:grid;grid-template-columns:1fr 1fr;gap:8px;justify-items:center}
+.ringbox{position:relative;width:104px;height:104px}
+.ringtxt{position:absolute;inset:0;display:grid;place-content:center;text-align:center;line-height:1.1}
+.ringtxt b{font-size:19px}
+.ringtxt small{font-size:11px;color:var(--muted)}
+.ringcap{text-align:center;font-size:12px;color:var(--muted);margin-top:2px}
+.meal{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:11px 0;border-top:1px solid rgba(58,105,196,.55)}
+.meal:first-of-type{border-top:0}
+.meal .t{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.meal .n{background:none;border:0;padding:0;text-align:left;font-weight:750;font-size:15px;line-height:1.3;color:#fff}
+.meal .m{color:var(--muted);font-size:12px;margin-top:2px}
+.meal .c{text-align:right;font-weight:800;white-space:nowrap}
+.meal .sw{display:block;margin-top:6px;margin-left:auto;background:none;border:1px solid var(--line);border-radius:9px;color:var(--muted);font-size:12px;padding:3px 8px}
+.meal.done .n{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.35)}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 8px;margin:4px 4px 0 0;font-size:12px;color:#dbe6ff}
+.seg{display:flex;gap:6px;margin:12px 0}
+.seg button{flex:1;padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:800;font-size:13px;line-height:1.2}
+.seg button.on{background:var(--gold);color:#13203f;border-color:var(--gold)}
+.seg button small{display:block;font-weight:600;font-size:10.5px;opacity:.85;margin-top:2px}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.days button{padding:9px 2px;border-radius:12px;border:1px solid var(--line);background:#0a2457;color:var(--muted);font-weight:800;font-size:13px;line-height:1.15}
+.days button.on{background:var(--surface2);color:#fff;border-color:var(--gold)}
+.days button small{display:block;font-weight:600;font-size:10px;margin-top:2px}
+.cyc{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.cyc b{display:block;text-align:center;flex:1}
+.cyc button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:18px}
+.cyc button:disabled{opacity:.35}
+.shoprow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(58,105,196,.55)}
+.shoprow:first-of-type{border-top:0}
+.shoprow .q{font-weight:800;text-align:right}
+.shoprow.stock{opacity:.7}
+.shoprow.ck b{text-decoration:line-through;color:var(--muted)}
+.note{border-left:3px solid var(--gold);padding:9px 11px;background:#0b2860;border-radius:9px;color:#dbe6ff;font-size:12.5px;margin:12px 0}
+.warnbox{border-left:3px solid var(--danger);padding:9px 11px;background:#3a1020;border-radius:9px;color:#ffd5d8;font-size:13px;margin:12px 0}
+.okbox{border-left:3px solid var(--good);padding:9px 11px;background:#0c3a3a;border-radius:9px;color:#d5fff0;font-size:13px;margin:12px 0}
+details>summary{cursor:pointer;color:#dbe6ff;padding:4px 0;list-style:none;font-weight:700}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸ ";color:var(--gold)}
+details[open]>summary::before{content:"▾ "}
+.rcp{padding:0}
+.rcp>summary{padding:12px 14px;display:block}
+.rcp .body{padding:0 14px 14px}
+.rcp ol{padding-left:20px;margin:10px 0 8px}
+.rcp li{margin:5px 0;color:#e6eeff}
+.tip{margin-top:10px;padding:9px 10px;background:#0b2860;border:1px solid var(--line);border-radius:10px;font-size:13.5px}
+.search{margin:6px 0 10px}
+.exrow{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid rgba(58,105,196,.55);font-size:14px}
+.exrow:first-of-type{border-top:0}
+.exrow .d{color:var(--muted);font-size:12px}
+.exrow button{background:none;border:0;color:var(--danger);font-size:16px;padding:4px 8px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.quick button{background:#0b2860;border:1px solid var(--line);border-radius:999px;padding:7px 11px;font-size:13px;font-weight:700}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(8,29,74,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:3px solid var(--gold);box-shadow:0 -2px 0 var(--red);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{background:none;border:0;padding:8px 2px 9px;color:var(--muted);font-weight:700;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:var(--navh)}
+.tabs button .i{font-size:21px;line-height:1.1}
+.tabs button.on{color:var(--gold)}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(3,12,35,.72);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:20px 20px 0 0;width:min(820px,100%);max-height:88vh;overflow:auto;padding:16px 16px calc(22px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.sheet .x{float:right;margin:-4px -4px 6px 8px}
+.opt{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0}
+.opt.cur{border-color:var(--gold)}
+.opt b{font-size:14px}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--navh) + 24px + env(safe-area-inset-bottom));z-index:60;background:#fff;color:#13203f;font-weight:700;border-radius:999px;padding:9px 16px;font-size:13.5px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:90vw;text-align:center}
+.spark{width:100%;height:84px;display:block}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px;margin-top:8px}
+.kv span:nth-child(even){text-align:right;font-weight:800}
+.ok{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--danger)}
+textarea{min-height:76px;resize:vertical}
+.big{font-size:26px;font-weight:900;line-height:1.1}
+.act{display:grid;grid-template-columns:70px 1fr auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid rgba(58,105,196,.55);font-size:14px}
+.act:first-of-type{border-top:0}
+.act .d{color:var(--muted);font-size:12px}
+.act.today{background:rgba(245,197,24,.12);border-radius:10px;padding-left:6px;padding-right:6px}
+@media (max-width:380px){.ringbox{width:92px;height:92px}.ringbox svg{width:92px;height:92px}.grid3{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brandmark" aria-hidden="true">MR</div>
+    <div class="ttl"><h1>Ma Routine</h1><small id="sub">Nutrition · du lundi au vendredi</small></div>
+    <button class="iconbtn" id="gear" type="button" aria-label="Réglages">⚙️</button>
+  </header>
+  <main id="view"></main>
+</div>
+<nav class="tabs" id="tabs" aria-label="Navigation">
+  <button type="button" data-tab="today"><span class="i">🏠</span>Aujourd’hui</button>
+  <button type="button" data-tab="menus"><span class="i">🍽️</span>Menus</button>
+  <button type="button" data-tab="shop"><span class="i">🛒</span>Courses</button>
+  <button type="button" data-tab="goal"><span class="i">🎯</span>Objectif</button>
+  <button type="button" data-tab="recipes"><span class="i">📖</span>Recettes</button>
+</nav>
+<div id="modal" class="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<script>
+'use strict';
+const FOODS={"skyr":{"cat":"Protéines","unit":"g","pack":"Skyr nature","packSize":1000,"packLabel":"pot de 1 kg","packPrice":2.8},"eggs":{"cat":"Protéines","unit":"u","pack":"Œufs","packSize":12,"packLabel":"boîte de 12","packPrice":2.8},"chicken":{"cat":"Protéines","unit":"g","pack":"Filets de poulet","packSize":1000,"packLabel":"barquette de 1 kg","packPrice":8.0},"turkey":{"cat":"Protéines","unit":"g","pack":"Dinde hachée","packSize":500,"packLabel":"barquette de 500 g","packPrice":4.25},"tuna":{"cat":"Protéines","unit":"boîte","pack":"Thon au naturel","packSize":4,"packLabel":"lot de 4 boîtes","packPrice":5.2},"oats":{"cat":"Féculents","unit":"g","pack":"Flocons d’avoine","packSize":500,"packLabel":"paquet de 500 g","packPrice":1.2},"rice":{"cat":"Féculents","unit":"g","pack":"Riz","packSize":1000,"packLabel":"sac de 1 kg","packPrice":2.0},"pasta":{"cat":"Féculents","unit":"g","pack":"Pâtes","packSize":500,"packLabel":"paquet de 500 g","packPrice":0.9},"potatoes":{"cat":"Féculents","unit":"g","pack":"Pommes de terre","packSize":2500,"packLabel":"filet de 2,5 kg","packPrice":3.75},"semolina":{"cat":"Féculents","unit":"g","pack":"Semoule","packSize":500,"packLabel":"paquet de 500 g","packPrice":1.1},"bread":{"cat":"Féculents","unit":"tranche","pack":"Pain complet","packSize":14,"packLabel":"paquet d’environ 14 tranches","packPrice":1.7},"lentils":{"cat":"Légumineuses","unit":"g","pack":"Lentilles sèches","packSize":500,"packLabel":"paquet de 500 g","packPrice":1.5},"beans":{"cat":"Légumineuses","unit":"g","pack":"Haricots rouges","packSize":250,"packLabel":"boîte ≈ 250 g égouttés","packPrice":0.75},"veg":{"cat":"Fruits & légumes","unit":"g","pack":"Légumes variés/surgelés","packSize":1000,"packLabel":"sachet de 1 kg","packPrice":2.2},"banana":{"cat":"Fruits & légumes","unit":"u","pack":"Bananes","packSize":1,"packLabel":"à l’unité","packPrice":0.34,"loose":true},"apple":{"cat":"Fruits & légumes","unit":"u","pack":"Pommes","packSize":1,"packLabel":"à l’unité","packPrice":0.37,"loose":true},"onion":{"cat":"Fruits & légumes","unit":"g","pack":"Oignons","packSize":1000,"packLabel":"filet de 1 kg","packPrice":1.6},"tomato":{"cat":"Épicerie","unit":"g","pack":"Sauce tomate nature","packSize":500,"packLabel":"brique/pot de 500 g","packPrice":0.9},"milk":{"cat":"Épicerie","unit":"ml","pack":"Lait demi-écrémé","packSize":1000,"packLabel":"bouteille de 1 L","packPrice":1.2}};
+const BREAKFASTS=[{"id": "b1", "name": "Bowl skyr-banane, avoine & œufs", "type": "Matin", "kcal": 620, "protein": 52, "cost": 2.6, "ingredients": ["300 g skyr", "60 g avoine", "1 banane", "2 œufs", "150 ml lait", "Cannelle"], "steps": ["Fais cuire les œufs 7 à 9 min selon la texture souhaitée.", "Mélange skyr, avoine et lait dans un grand bol.", "Ajoute la banane en rondelles et la cannelle.", "Sers les œufs à côté, légèrement salés et poivrés."], "tips": "Prépare le bowl la veille pour gagner du temps.", "swap": "Banane ↔ pomme ; skyr ↔ fromage blanc.", "shop": {"skyr": 300, "oats": 60, "banana": 1, "eggs": 2, "milk": 150}}, {"id": "b2", "name": "Omelette protéinée, tartines & pomme", "type": "Matin", "kcal": 580, "protein": 50, "cost": 2.55, "ingredients": ["3 œufs", "200 g skyr", "2 tranches pain complet", "1 pomme", "Herbes"], "steps": ["Bats les œufs avec poivre et herbes.", "Cuisson douce 3 à 4 min dans une poêle antiadhésive.", "Toaste le pain complet.", "Sers avec le skyr et la pomme."], "tips": "Cuisson douce = omelette plus moelleuse.", "swap": "Pain ↔ pommes de terre vapeur.", "shop": {"eggs": 3, "skyr": 200, "bread": 2, "apple": 1}}, {"id": "b3", "name": "Overnight oats cacao-banane", "type": "Matin", "kcal": 600, "protein": 51, "cost": 2.45, "ingredients": ["300 g skyr", "65 g avoine", "1 banane", "150 ml lait", "10 g cacao", "1 œuf"], "steps": ["Mélange skyr, avoine, lait et cacao.", "Écrase la moitié de la banane dans le mélange.", "Ajoute le reste en rondelles.", "Laisse une nuit au frais et ajoute l’œuf dur au moment de manger."], "tips": "Prépare deux pots d’un coup, ils tiennent 48 h.", "swap": "Cacao ↔ cannelle.", "shop": {"skyr": 300, "oats": 65, "banana": 1, "milk": 150, "eggs": 1}}, {"id": "b4", "name": "Pancakes avoine-skyr & pomme", "type": "Matin", "kcal": 590, "protein": 50, "cost": 2.6, "ingredients": ["2 œufs", "250 g skyr", "60 g avoine", "1/2 banane", "1 pomme", "Cannelle"], "steps": ["Mixe œufs, avoine, demi-banane et 100 g de skyr.", "Laisse reposer 2 min.", "Cuisson des pancakes 1 min 30 par face.", "Sers avec le reste du skyr, la pomme en dés et la cannelle."], "tips": "La pâte peut être préparée la veille.", "swap": "Pomme ↔ fruits rouges.", "shop": {"eggs": 2, "skyr": 250, "oats": 60, "banana": 0.5, "apple": 1}}, {"id": "b5", "name": "French toast protéiné & skyr", "type": "Matin", "kcal": 610, "protein": 51, "cost": 2.65, "ingredients": ["3 tranches pain complet", "2 œufs", "250 g skyr", "1 banane", "Un peu de lait", "Cannelle"], "steps": ["Bats œufs, lait et cannelle.", "Trempe rapidement le pain.", "Fais dorer 2 à 3 min par face.", "Sers avec la banane et le skyr."], "tips": "Pas besoin de sucre ajouté grâce à la banane.", "swap": "Banane ↔ pomme poêlée.", "shop": {"bread": 3, "eggs": 2, "skyr": 250, "banana": 1, "milk": 80}}, {"id": "b6", "name": "Bol pomme-cannelle, skyr & avoine", "type": "Matin", "kcal": 600, "protein": 52, "cost": 2.55, "ingredients": ["320 g skyr", "60 g avoine", "1 pomme", "2 œufs", "Cannelle"], "steps": ["Coupe la pomme en dés et chauffe-la 3 min à la poêle avec cannelle et un fond d’eau.", "Mélange skyr et avoine.", "Ajoute la pomme chaude dessus.", "Sers avec les œufs durs ou mollets."], "tips": "Le contraste chaud/froid évite la monotonie.", "swap": "Pomme ↔ poire.", "shop": {"skyr": 320, "oats": 60, "apple": 1, "eggs": 2}}, {"id": "b7", "name": "Œufs brouillés, skyr & avoine banane", "type": "Matin", "kcal": 615, "protein": 53, "cost": 2.7, "ingredients": ["3 œufs", "220 g skyr", "55 g avoine", "1 banane", "100 ml lait"], "steps": ["Fais gonfler l’avoine dans le lait 3 à 4 min.", "Ajoute la banane écrasée.", "Prépare les œufs brouillés à feu doux.", "Sers avec le skyr à côté."], "tips": "Retire les œufs du feu juste avant cuisson complète.", "swap": "Avoine ↔ pain complet.", "shop": {"eggs": 3, "skyr": 220, "oats": 55, "banana": 1, "milk": 100}}, {"id": "b8", "name": "Porridge crémeux pomme & skyr", "type": "Matin", "kcal": 600, "protein": 50, "cost": 2.45, "ingredients": ["70 g avoine", "250 g skyr", "200 ml lait", "1 pomme", "2 œufs", "Cannelle"], "steps": ["Fais cuire l’avoine dans le lait 4 à 5 min.", "Ajoute la pomme en petits dés et la cannelle.", "Laisse tiédir puis incorpore la moitié du skyr.", "Sers le reste du skyr et les œufs à côté."], "tips": "Incorpore le skyr hors du feu pour garder la texture.", "swap": "Pomme ↔ banane.", "shop": {"oats": 70, "skyr": 250, "milk": 200, "apple": 1, "eggs": 2}}, {"id": "b9", "name": "Tartines œufs-skyr & banane", "type": "Matin", "kcal": 590, "protein": 51, "cost": 2.6, "ingredients": ["3 œufs", "200 g skyr", "3 tranches pain complet", "1 banane"], "steps": ["Toaste le pain.", "Prépare des œufs brouillés crémeux.", "Étale une fine couche de skyr assaisonné sur deux tartines et ajoute les œufs.", "Garde la troisième tartine avec la banane pour la touche sucrée."], "tips": "Ajoute paprika ou herbes sur la partie salée.", "swap": "Banane ↔ pomme.", "shop": {"eggs": 3, "skyr": 200, "bread": 3, "banana": 1}}, {"id": "b10", "name": "Bowl froid cacao-pomme & œufs", "type": "Matin", "kcal": 595, "protein": 50, "cost": 2.5, "ingredients": ["300 g skyr", "60 g avoine", "1 pomme", "1 œuf", "150 ml lait", "Cacao"], "steps": ["Mélange skyr, avoine, lait et cacao.", "Ajoute la pomme en dés.", "Laisse reposer 5 min ou toute la nuit.", "Sers avec l’œuf dur à côté."], "tips": "Idéal quand tu veux un petit-déjeuner très rapide.", "swap": "Pomme ↔ banane.", "shop": {"skyr": 300, "oats": 60, "apple": 1, "eggs": 1, "milk": 150}}];
+const LUNCHES=[{"id": "l1", "name": "Poulet paprika, riz & légumes", "type": "Midi", "kcal": 760, "protein": 66, "cost": 3.9, "ingredients": ["220 g poulet", "100 g riz cru", "300 g légumes", "50 g oignon", "Paprika, ail"], "steps": ["Fais cuire le riz.", "Assaisonne le poulet puis saisis-le 6 à 8 min.", "Ajoute oignon et légumes, poursuis 6 min.", "Ajoute le riz et mélange 1 min."], "tips": "Prépare 2 portions pour le meal prep.", "swap": "Riz ↔ semoule.", "shop": {"chicken": 220, "rice": 100, "veg": 300, "onion": 50}}, {"id": "l2", "name": "Chili de dinde & riz", "type": "Midi", "kcal": 780, "protein": 65, "cost": 3.85, "ingredients": ["220 g dinde", "90 g riz", "150 g haricots rouges", "200 g sauce tomate", "50 g oignon", "Cumin, paprika"], "steps": ["Fais cuire le riz.", "Fais revenir l’oignon et la dinde.", "Ajoute épices, tomate et haricots.", "Laisse mijoter 10 min et sers avec le riz."], "tips": "Encore meilleur le lendemain.", "swap": "Dinde ↔ poulet haché.", "shop": {"turkey": 220, "rice": 90, "beans": 150, "tomato": 200, "onion": 50}}, {"id": "l3", "name": "Curry poulet-lentilles & semoule", "type": "Midi", "kcal": 750, "protein": 64, "cost": 3.55, "ingredients": ["200 g poulet", "60 g lentilles", "80 g semoule", "250 g légumes", "Curry"], "steps": ["Fais cuire les lentilles.", "Saisis le poulet au curry.", "Ajoute les légumes puis les lentilles et un fond d’eau.", "Prépare la semoule et sers le curry dessus."], "tips": "Les lentilles augmentent fortement la satiété.", "swap": "Semoule ↔ riz.", "shop": {"chicken": 200, "lentils": 60, "semolina": 80, "veg": 250}}, {"id": "l4", "name": "Dinde façon kebab, riz & sauce blanche", "type": "Midi", "kcal": 770, "protein": 66, "cost": 3.9, "ingredients": ["220 g dinde", "95 g riz", "250 g légumes", "120 g skyr", "Paprika, cumin, ail"], "steps": ["Fais cuire le riz.", "Assaisonne et saisis la dinde à feu vif.", "Ajoute les légumes 5 min.", "Mélange le skyr avec ail, poivre et un peu de vinaigre pour la sauce."], "tips": "Goût fast-food, macros maîtrisées.", "swap": "Dinde ↔ poulet.", "shop": {"turkey": 220, "rice": 95, "veg": 250, "skyr": 120}}, {"id": "l5", "name": "Poulet mexicain, riz & haricots rouges", "type": "Midi", "kcal": 760, "protein": 64, "cost": 3.8, "ingredients": ["210 g poulet", "85 g riz", "130 g haricots rouges", "250 g légumes", "Paprika, cumin"], "steps": ["Fais cuire le riz.", "Saisis le poulet avec paprika et cumin.", "Ajoute légumes et haricots rincés.", "Termine avec un trait de citron ou vinaigre."], "tips": "Ajoute un peu de tomate pour une version burrito bowl.", "swap": "Poulet ↔ dinde.", "shop": {"chicken": 210, "rice": 85, "beans": 130, "veg": 250}}, {"id": "l6", "name": "Poulet tomate, pâtes & courgettes", "type": "Midi", "kcal": 750, "protein": 65, "cost": 3.75, "ingredients": ["210 g poulet", "105 g pâtes", "180 g sauce tomate", "250 g légumes", "Herbes italiennes"], "steps": ["Fais cuire les pâtes al dente.", "Saisis le poulet puis réserve.", "Fais revenir les légumes, ajoute la tomate.", "Remets le poulet, ajoute les pâtes et mélange 2 min."], "tips": "Paprika fumé ou piment pour changer le profil.", "swap": "Pâtes ↔ semoule.", "shop": {"chicken": 210, "pasta": 105, "tomato": 180, "veg": 250}}, {"id": "l7", "name": "Dinde lentilles tomate & pommes de terre", "type": "Midi", "kcal": 770, "protein": 67, "cost": 3.8, "ingredients": ["200 g dinde", "70 g lentilles", "300 g pommes de terre", "180 g sauce tomate", "150 g légumes"], "steps": ["Fais cuire lentilles et pommes de terre séparément.", "Saisis la dinde.", "Ajoute tomate et légumes puis les lentilles.", "Sers avec les pommes de terre écrasées grossièrement."], "tips": "Très rassasiant pour les jours de grosse faim.", "swap": "Pommes de terre ↔ riz.", "shop": {"turkey": 200, "lentils": 70, "potatoes": 300, "tomato": 180, "veg": 150}}, {"id": "l8", "name": "Poulet curry tomate & riz", "type": "Midi", "kcal": 760, "protein": 65, "cost": 3.75, "ingredients": ["220 g poulet", "95 g riz", "180 g sauce tomate", "250 g légumes", "Curry"], "steps": ["Fais cuire le riz.", "Saisis le poulet au curry.", "Ajoute légumes et tomate, laisse mijoter 8 min.", "Sers avec le riz."], "tips": "Un peu d’eau rend la sauce plus nappante sans calories.", "swap": "Riz ↔ semoule.", "shop": {"chicken": 220, "rice": 95, "tomato": 180, "veg": 250}}, {"id": "l9", "name": "Dinde bolognaise protéinée", "type": "Midi", "kcal": 780, "protein": 66, "cost": 3.9, "ingredients": ["220 g dinde", "110 g pâtes", "220 g sauce tomate", "150 g légumes", "50 g oignon"], "steps": ["Fais cuire les pâtes.", "Fais revenir oignon et dinde.", "Ajoute tomate et légumes, mijote 10 min.", "Mélange aux pâtes."], "tips": "Prépare la sauce en double pour un autre jour.", "swap": "Dinde ↔ poulet.", "shop": {"turkey": 220, "pasta": 110, "tomato": 220, "veg": 150, "onion": 50}}, {"id": "l10", "name": "Poulet citron, semoule & légumes", "type": "Midi", "kcal": 745, "protein": 64, "cost": 3.6, "ingredients": ["210 g poulet", "95 g semoule", "300 g légumes", "100 g skyr", "Citron/ail"], "steps": ["Assaisonne le poulet avec citron, ail et poivre.", "Saisis-le 7 à 8 min.", "Prépare la semoule 5 min à couvert.", "Sers avec les légumes et une sauce skyr-citron."], "tips": "Très pratique quand tu veux cuisiner en moins de 20 min.", "swap": "Semoule ↔ riz.", "shop": {"chicken": 210, "semolina": 95, "veg": 300, "skyr": 100}}, {"id": "l11", "name": "Bowl thon-riz, haricots & légumes", "type": "Midi", "kcal": 750, "protein": 64, "cost": 3.65, "ingredients": ["1 boîte thon", "105 g riz", "150 g haricots rouges", "250 g légumes", "120 g skyr"], "steps": ["Fais cuire le riz.", "Égoutte le thon et rince les haricots.", "Réchauffe les légumes.", "Assemble et ajoute une sauce skyr-moutarde."], "tips": "Se mange aussi froid en lunch box.", "swap": "Thon ↔ poulet froid.", "shop": {"tuna": 1, "rice": 105, "beans": 150, "veg": 250, "skyr": 120}}, {"id": "l12", "name": "Poulet façon provençale & pommes de terre", "type": "Midi", "kcal": 765, "protein": 66, "cost": 3.75, "ingredients": ["220 g poulet", "380 g pommes de terre", "200 g sauce tomate", "250 g légumes", "Herbes"], "steps": ["Coupe les pommes de terre et cuis-les à l’air fryer ou au four.", "Saisis le poulet.", "Ajoute tomate, légumes et herbes.", "Laisse réduire 8 min et sers avec les pommes de terre."], "tips": "Thym + ail donnent beaucoup de goût sans calories.", "swap": "Pommes de terre ↔ riz.", "shop": {"chicken": 220, "potatoes": 380, "tomato": 200, "veg": 250}}];
+const DINNERS=[{"id": "d1", "name": "Pâtes au thon crémeuses tomate-skyr", "type": "Soir", "kcal": 690, "protein": 64, "cost": 3.45, "ingredients": ["1 boîte thon", "110 g pâtes", "120 g skyr", "180 g sauce tomate", "200 g légumes"], "steps": ["Fais cuire les pâtes.", "Réchauffe tomate et légumes.", "Ajoute le thon.", "Hors du feu, incorpore le skyr avec un peu d’eau de cuisson puis les pâtes."], "tips": "Ne fais pas bouillir le skyr.", "swap": "Thon ↔ poulet effiloché.", "shop": {"tuna": 1, "pasta": 110, "skyr": 120, "tomato": 180, "veg": 200}}, {"id": "d2", "name": "Poulet citron, pommes de terre & haricots verts", "type": "Soir", "kcal": 700, "protein": 66, "cost": 3.7, "ingredients": ["220 g poulet", "350 g pommes de terre", "300 g légumes", "100 g skyr"], "steps": ["Fais cuire les pommes de terre.", "Assaisonne le poulet au citron et à l’ail.", "Saisis 7 à 9 min, ajoute les légumes.", "Sers avec une sauce skyr-citron."], "tips": "La sauce froide apporte beaucoup de goût.", "swap": "Légumes ↔ brocoli.", "shop": {"chicken": 220, "potatoes": 350, "veg": 300, "skyr": 100}}, {"id": "d3", "name": "Bowl thon-pommes de terre, moutarde-skyr", "type": "Soir", "kcal": 710, "protein": 65, "cost": 3.4, "ingredients": ["1 boîte thon", "350 g pommes de terre", "200 g skyr", "250 g légumes"], "steps": ["Fais cuire puis coupe les pommes de terre.", "Égoutte le thon.", "Mélange skyr, moutarde, vinaigre et herbes.", "Assemble avec les légumes."], "tips": "Parfait froid pour emporter.", "swap": "Thon ↔ poulet froid.", "shop": {"tuna": 1, "potatoes": 350, "skyr": 200, "veg": 250}}, {"id": "d4", "name": "Haché de dinde, purée rustique & légumes", "type": "Soir", "kcal": 700, "protein": 66, "cost": 3.75, "ingredients": ["220 g dinde", "400 g pommes de terre", "250 g légumes", "100 g skyr"], "steps": ["Fais cuire les pommes de terre.", "Écrase-les avec le skyr, poivre et muscade.", "Fais revenir la dinde.", "Ajoute les légumes et sers avec la purée."], "tips": "Le skyr remplace crème et beurre.", "swap": "Dinde ↔ poulet haché.", "shop": {"turkey": 220, "potatoes": 400, "veg": 250, "skyr": 100}}, {"id": "d5", "name": "Poulet ail-herbes, pâtes & légumes", "type": "Soir", "kcal": 700, "protein": 65, "cost": 3.65, "ingredients": ["210 g poulet", "100 g pâtes", "300 g légumes", "100 g skyr", "Ail, herbes"], "steps": ["Fais cuire les pâtes.", "Saisis le poulet à l’ail.", "Ajoute les légumes.", "Mélange skyr et herbes hors du feu puis ajoute les pâtes."], "tips": "Garde un peu d’eau de cuisson pour détendre la sauce.", "swap": "Pâtes ↔ riz.", "shop": {"chicken": 210, "pasta": 100, "veg": 300, "skyr": 100}}, {"id": "d6", "name": "Dinde tomate, riz & légumes", "type": "Soir", "kcal": 705, "protein": 66, "cost": 3.7, "ingredients": ["210 g dinde", "90 g riz", "180 g sauce tomate", "300 g légumes"], "steps": ["Fais cuire le riz.", "Saisis la dinde et émiette-la.", "Ajoute légumes et tomate, mijote 8 min.", "Sers avec le riz."], "tips": "Ajoute cumin ou herbes italiennes selon l’envie.", "swap": "Dinde ↔ poulet.", "shop": {"turkey": 210, "rice": 90, "tomato": 180, "veg": 300}}, {"id": "d7", "name": "Poulet, lentilles & légumes au curry", "type": "Soir", "kcal": 695, "protein": 65, "cost": 3.55, "ingredients": ["200 g poulet", "70 g lentilles", "300 g légumes", "100 g skyr", "Curry"], "steps": ["Fais cuire les lentilles.", "Saisis le poulet avec le curry.", "Ajoute les légumes puis les lentilles.", "Hors du feu, ajoute une cuillère de skyr pour lier."], "tips": "Très riche en fibres et protéines.", "swap": "Lentilles ↔ haricots rouges.", "shop": {"chicken": 200, "lentils": 70, "veg": 300, "skyr": 100}}, {"id": "d8", "name": "Thon, riz tomate & légumes", "type": "Soir", "kcal": 700, "protein": 64, "cost": 3.35, "ingredients": ["1 boîte thon", "100 g riz", "200 g sauce tomate", "250 g légumes", "120 g skyr"], "steps": ["Fais cuire le riz.", "Réchauffe tomate et légumes.", "Ajoute le thon hors du feu.", "Sers avec une cuillère de skyr assaisonné."], "tips": "Recette express pour les soirs chargés.", "swap": "Thon ↔ poulet.", "shop": {"tuna": 1, "rice": 100, "tomato": 200, "veg": 250, "skyr": 120}}, {"id": "d9", "name": "Poulet semoule, sauce blanche & légumes", "type": "Soir", "kcal": 700, "protein": 65, "cost": 3.6, "ingredients": ["210 g poulet", "90 g semoule", "300 g légumes", "120 g skyr"], "steps": ["Saisis le poulet.", "Prépare la semoule à couvert 5 min.", "Cuire ou réchauffer les légumes.", "Mélange skyr, ail, poivre et herbes pour la sauce."], "tips": "Très rapide à assembler.", "swap": "Semoule ↔ riz.", "shop": {"chicken": 210, "semolina": 90, "veg": 300, "skyr": 120}}, {"id": "d10", "name": "Dinde-pommes de terre façon poêlée", "type": "Soir", "kcal": 710, "protein": 67, "cost": 3.7, "ingredients": ["220 g dinde", "380 g pommes de terre", "250 g légumes", "80 g skyr"], "steps": ["Précuis les pommes de terre 8 min à l’eau.", "Fais-les dorer à la poêle.", "Ajoute la dinde puis les légumes.", "Sers avec un peu de skyr aux herbes."], "tips": "Précuire les pommes de terre accélère la poêlée.", "swap": "Pommes de terre ↔ riz.", "shop": {"turkey": 220, "potatoes": 380, "veg": 250, "skyr": 80}}, {"id": "d11", "name": "Poulet bolognaise légère & pâtes", "type": "Soir", "kcal": 705, "protein": 66, "cost": 3.7, "ingredients": ["210 g poulet", "100 g pâtes", "200 g sauce tomate", "250 g légumes"], "steps": ["Fais cuire les pâtes.", "Hache ou coupe finement le poulet et saisis-le.", "Ajoute tomate et légumes, mijote 8 min.", "Mélange aux pâtes."], "tips": "Herbes italiennes + ail suffisent pour relever.", "swap": "Poulet ↔ dinde.", "shop": {"chicken": 210, "pasta": 100, "tomato": 200, "veg": 250}}, {"id": "d12", "name": "Bowl dinde-haricots, pommes de terre", "type": "Soir", "kcal": 710, "protein": 66, "cost": 3.65, "ingredients": ["200 g dinde", "300 g pommes de terre", "120 g haricots rouges", "250 g légumes", "80 g skyr"], "steps": ["Fais cuire les pommes de terre.", "Saisis la dinde.", "Ajoute légumes et haricots rouges rincés.", "Assemble avec une sauce skyr-moutarde."], "tips": "Très rassasiant sans dépasser les calories.", "swap": "Haricots ↔ lentilles.", "shop": {"turkey": 200, "potatoes": 300, "beans": 120, "veg": 250, "skyr": 80}}];
+
+/* ---------- Outils : dates (heure de Paris), formats, stockage ---------- */
+const PARIS_ZONE='Europe/Paris';
+const SLOTS=[{name:'Matin',ico:'☀️',pool:BREAKFASTS},{name:'Midi',ico:'🍽️',pool:LUNCHES},{name:'Soir',ico:'🌙',pool:DINNERS}];
+const MEAL_BY_ID={};SLOTS.forEach(s=>s.pool.forEach(m=>{MEAL_BY_ID[m.id]=m}));
+const CAT_ORDER=['Protéines','Féculents','Légumineuses','Fruits & légumes','Épicerie'];
+const KEY='maRoutine_v1';
+const APP_VERSION='V1';
+
+function dateNumber(v){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');if(!m)return NaN;const t=Date.UTC(+m[1],+m[2]-1,+m[3]);return new Date(t).toISOString().slice(0,10)===v?t:NaN}
+function addDays(v,n){return new Date(dateNumber(v)+n*864e5).toISOString().slice(0,10)}
+function dow(v){return new Date(dateNumber(v)).getUTCDay()}
+function mondayOf(v){return addDays(v,-((dow(v)+6)%7))}
+function parisDateKey(now=new Date()){
+  const p=new Intl.DateTimeFormat('en-GB',{timeZone:PARIS_ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+  const g=t=>p.find(x=>x.type===t).value;return `${g('year')}-${g('month')}-${g('day')}`;
+}
+// ?d=AAAA-MM-JJ simule une autre date (pour tester l'appli) ; sans ce paramètre, c'est la date de Paris.
+function todayKey(){try{const q=new URLSearchParams(location.search).get('d');if(q&&Number.isFinite(dateNumber(q)))return q}catch(e){}return parisDateKey()}
+const fmtLong=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'});
+const fmtShort=new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',timeZone:'UTC'});
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const dLong=v=>cap(fmtLong.format(new Date(dateNumber(v))));
+const dShort=v=>fmtShort.format(new Date(dateNumber(v)));
+const nf0=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0});
+const euro=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const kc=n=>nf0.format(Math.round(n));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function num(v){const n=parseFloat(String(v).replace(',','.'));return Number.isFinite(n)?n:NaN}
+const fmtN=(n,d=1)=>{const k=Math.pow(10,d);return (Math.round(n*k)/k).toString().replace('.',',')};
+const sgn=(n,d=1)=>(n>0?'+':n<0?'−':'')+fmtN(Math.abs(n),d);
+
+let mem={};
+const store={
+  get(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}},
+  del(k){try{localStorage.removeItem(k)}catch(e){delete mem[k]}}
+};
+
+/* ---------- Valeurs nutritionnelles : calories et protéines par unité du catalogue (tables usuelles, à ±10 %) ---------- */
+const NUTR={skyr:[0.62,0.11],eggs:[75,6.5],chicken:[1.10,0.23],turkey:[1.25,0.21],tuna:[120,27],oats:[3.7,0.13],rice:[3.55,0.07],pasta:[3.55,0.125],potatoes:[0.77,0.02],semolina:[3.6,0.12],bread:[80,3.2],lentils:[3.5,0.25],beans:[1.05,0.075],veg:[0.30,0.02],banana:[95,1.2],apple:[75,0.4],onion:[0.40,0.011],tomato:[0.35,0.014],milk:[0.46,0.033]};
+const STARCH=new Set(Object.keys(FOODS).filter(k=>FOODS[k].cat==='Féculents'));
+// Calories et protéines de chaque recette, recalculées à partir des quantités (+ 40 kcal de matière grasse de cuisson midi et soir).
+// Les féculents sont la variable d'ajustement : on les augmente ou les réduit pour atteindre les calories du jour, les protéines restent.
+Object.values(MEAL_BY_ID).forEach(m=>{
+  let k=m.id[0]==='b'?0:40,p=0,sk=0,sp=0;
+  Object.entries(m.shop).forEach(([f,q])=>{k+=q*NUTR[f][0];p+=q*NUTR[f][1];if(STARCH.has(f)){sk+=q*NUTR[f][0];sp+=q*NUTR[f][1]}});
+  m.kcal=Math.round(k/5)*5;m.protein=Math.round(p);m.sk=sk;m.sp=sp;
+});
+
+/* ---------- État ---------- */
+const DEFAULT={
+  goals:{budget:230,kcal:2100,protein:180,water:2500,auto:true},
+  profile:{sex:'',age:0,height:0,weight:0,target:0,rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7},
+  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},shop:{},spend:[],weights:[],rerolls:{}
+};
+function load(){
+  let saved={};try{saved=JSON.parse(store.get(KEY)||'{}')||{}}catch(e){saved={}}
+  const base=structuredClone(DEFAULT);
+  const s={...base,...saved,goals:{...base.goals,...(saved.goals||{})},profile:{...base.profile,...(saved.profile||{})}};
+  ['prices','checks','extras','water','swaps','off','shop','rerolls'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
+  ['spend','weights'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+  return s;
+}
+let state=load();
+function save(){store.set(KEY,JSON.stringify(state))}
+// Tout ce qui change les menus ou les quantités (jours, prix, budget, profil…) passe par bump() pour refaire les calculs.
+let ver=0;const cycleCache=new Map(),mealCache=new Map(),planCache=new Map();
+function bump(){ver++;mealCache.clear();cycleCache.clear()}
+function resetCaches(){planCache.clear();bump()}
+
+/* Lien facultatif avec ROAD TO GI : même navigateur = même stockage ; sinon on colle sa sauvegarde. */
+function readRtg(){try{const raw=localStorage.getItem('roadToGI_v1');if(!raw)return null;const s=JSON.parse(raw);return s&&typeof s==='object'?s:null}catch(e){return null}}
+function applyRtg(s){
+  const got=[];
+  if(!s||typeof s!=='object')return got;
+  if(Number.isFinite(dateNumber(s.startDate))){state.start=mondayOf(s.startDate);got.push('début de la préparation')}
+  const bw=Number((s.profile||{}).bodyWeight);
+  if(bw>30&&bw<250){
+    if(!state.weights.some(w=>w.d===todayKey())){setWeight(todayKey(),bw);got.push('poids '+fmtN(bw)+' kg')}
+    if(!(state.profile.weight>0))state.profile.weight=bw;
+  }
+  resetCaches();
+  return got;
+}
+function ensureStart(){
+  if(Number.isFinite(dateNumber(state.start)))return;
+  const r=readRtg();
+  if(r&&Number.isFinite(dateNumber(r.startDate))){state.start=mondayOf(r.startDate)}
+  else{const t=todayKey(),d=dow(t);state.start=(d===6||d===0)?addDays(mondayOf(t),7):mondayOf(t)}
+  save();
+}
+
+/* ---------- Poids ---------- */
+function setWeight(d,kg){
+  state.weights=state.weights.filter(w=>w.d!==d);state.weights.push({d,kg});
+  state.weights.sort((a,b)=>a.d<b.d?-1:1);
+}
+const lastWeight=()=>state.weights.length?state.weights[state.weights.length-1]:null;
+// pente de la courbe de poids sur les 28 derniers jours (kg par semaine), si au moins 3 pesées sur 7 jours ou plus
+function weightTrend(today){
+  const from=addDays(today,-28),ws=state.weights.filter(w=>w.d>=from&&w.d<=today);
+  if(ws.length<3)return null;
+  const x0=dateNumber(ws[0].d)/864e5,xs=ws.map(w=>dateNumber(w.d)/864e5-x0);
+  if(xs[xs.length-1]<7)return null;
+  const n=ws.length,mx=xs.reduce((a,b)=>a+b,0)/n,my=ws.reduce((a,w)=>a+w.kg,0)/n;
+  let sxy=0,sxx=0;ws.forEach((w,i)=>{sxy+=(xs[i]-mx)*(w.kg-my);sxx+=(xs[i]-mx)**2});
+  return sxx>0?{perWeek:sxy/sxx*7,n,days:xs[xs.length-1]}:null;
+}
+
+/* ---------- Dépense énergétique : tes séances ROAD TO GI + poids actuel / poids cible ---------- */
+// Planning ROAD TO GI : functional lundi, mercredi, vendredi ; course + abdos mardi, jeudi (et samedi) ; dimanche repos.
+const ACT={0:{k:'rest',n:'Repos'},1:{k:'force',n:'Functional training · pecs et dos'},2:{k:'course',n:'Course + abdos'},3:{k:'force',n:'Functional training · jambes et épaules'},4:{k:'course',n:'Course + abdos'},5:{k:'force',n:'Functional training · pecs et dos'},6:{k:'course',n:'Course + circuit'}};
+const DAY_NAMES=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const actOf=date=>ACT[dow(date)];
+function profileReady(){
+  const p=state.profile;
+  return p.weight>30&&p.weight<250&&p.height>120&&p.height<230&&p.age>12&&p.age<100&&(p.sex==='H'||p.sex==='F')&&p.target>30&&p.target<250;
+}
+function energy(adjust){
+  if(!profileReady())return{ready:false};
+  const p=state.profile,w=p.weight;if(adjust===undefined)adjust=p.adjust;
+  const bmr=10*w+6.25*p.height-5*p.age+(p.sex==='H'?5:-161),base=bmr*p.pal;
+  const tdee={force:base+p.kgForce*w,course:base+p.kgCourse*w,rest:base};
+  const diff=w-p.target,mode=diff>0.5?'cut':diff<-0.5?'bulk':'maint';
+  const rate=mode==='maint'?0:p.rate,floor=Math.max(bmr,p.sex==='H'?1500:1200);
+  const targets={};let capped=false;
+  ['force','course'].forEach(k=>{
+    // l'écart hebdomadaire voulu est réparti sur les 5 jours planifiés (le week-end n'est pas compté)
+    const want=tdee[k]+(mode==='cut'?-1:mode==='bulk'?1:0)*rate*7700/5+adjust;
+    let t=want;
+    // jamais plus de 25 % sous la dépense, ni sous le plancher de sécurité (on n'alerte que si cela change vraiment le déficit)
+    if(mode==='cut'){const lim=Math.max(tdee[k]*0.75,floor);if(t<lim){t=lim;if(tdee[k]-t<(tdee[k]-want)*0.9)capped=true}}
+    targets[k]=Math.round(t/10)*10;
+  });
+  return{ready:true,bmr,base,tdee,mode,rate,floor,targets,capped,diff,protein:Math.round(p.protKg*w/5)*5};
+}
+const auto=()=>state.goals.auto&&profileReady();
+function targetKcal(date){const d=dow(date);if(auto()){const e=energy();return e.targets[ACT[d]&&ACT[d].k==='course'?'course':'force']}return state.goals.kcal}
+function targetProtein(){return auto()?energy().protein:state.goals.protein}
+const rateOptions=mode=>mode==='bulk'?[[0.1,'Doux · +0,1 kg/sem'],[0.2,'Modéré · +0,2 kg/sem'],[0.3,'Rapide · +0,3 kg/sem']]:[[0.25,'Doux · −0,25 kg/sem'],[0.5,'Modéré · −0,5 kg/sem'],[0.75,'Rapide · −0,75 kg/sem']];
+
+/* ---------- Cycles de 4 semaines (lundi-vendredi) alignés sur les 4 semaines d'un programme ROAD TO GI ---------- */
+function monthSeed(id){let s=0;for(const c of id)s=(s*31+c.charCodeAt(0))>>>0;return s}
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function shuffled(arr,rand){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+// 20 repas par créneau : chaque recette revient au plus ~2 fois et jamais deux fois dans les 4 derniers jours.
+function sequence(pool,rand,count){
+  const out=[];let bag=[];
+  while(out.length<count){
+    if(!bag.length)bag=shuffled(pool,rand);
+    const recent=out.slice(-4).map(m=>m.id);
+    let i=bag.findIndex(m=>!recent.includes(m.id));if(i<0)i=0;
+    out.push(bag.splice(i,1)[0]);
+  }
+  return out;
+}
+function buildCycle(seed){
+  const rand=mulberry32(monthSeed(seed));
+  const seqs=SLOTS.map(s=>sequence(s.pool,rand,20));
+  return [0,1,2,3].map(w=>[0,1,2,3,4].map(d=>seqs.map(q=>q[w*5+d].id)));
+}
+const flatIds=weeks=>weeks.flat(2);
+function diffRatio(a,b){if(!a||!b||a.length!==b.length)return 1;let n=0;for(let i=0;i<a.length;i++)if(a[i]!==b[i])n++;return n/a.length}
+function differentSalt(cs,prevIds,startSalt){
+  let best=startSalt,bestDiff=-1;
+  for(let salt=startSalt;salt<startSalt+80;salt++){
+    const diff=diffRatio(flatIds(buildCycle(cs+'#'+salt)),prevIds);
+    if(diff>bestDiff){bestDiff=diff;best=salt}
+    if(diff>=0.70)return{salt,diff};
+  }
+  return{salt:best,diff:bestDiff};
+}
+// menus de base d'un cycle (avant jours décochés et ajustement au budget)
+function planFor(cs){
+  if(planCache.has(cs))return planCache.get(cs);
+  const prevIds=cs!==state.start?flatIds(planFor(addDays(cs,-28)).weeks):null;
+  let salt=0;
+  if(state.rerolls[cs]!=null)salt=state.rerolls[cs];
+  else if(prevIds)salt=differentSalt(cs,prevIds,0).salt;
+  const weeks=buildCycle(cs+'#'+salt),res={salt,diff:prevIds?diffRatio(flatIds(weeks),prevIds):null,weeks};
+  planCache.set(cs,res);return res;
+}
+function cycleStart(k){return addDays(state.start,28*k)}
+function posOf(date){
+  const e=Math.round((dateNumber(date)-dateNumber(state.start))/864e5),wk=Math.floor(e/7);
+  return{e,wk,upcoming:e<0,k:wk<0?0:Math.floor(wk/4),week:wk<0?0:((wk%4)+4)%4};
+}
+const dayDate=(cs,w,d)=>addDays(cs,w*7+d);
+
+/* ---------- Jours planifiés, portions, budget ---------- */
+const dayOn=(cs,w,d)=>!state.off[`${cs}|${w}|${d}`];
+function daysOn(cs,w){let n=0;for(let d=0;d<5;d++)if(dayOn(cs,w,d))n++;return n}
+function cycleDays(cs){let n=0;for(let w=0;w<4;w++)n+=daysOn(cs,w);return n}
+const budgetPerDay=()=>state.goals.budget/20;
+// budget dégressif : 230 € pour 20 jours = 11,50 € par jour planifié ; chaque jour décoché retire sa part
+const cycleBudget=cs=>Math.round(budgetPerDay()*cycleDays(cs)*100)/100;
+const price=k=>{const v=state.prices[k];return Number.isFinite(v)&&v>0?v:FOODS[k].packPrice};
+
+function scaleIngredient(txt,k,f){
+  // « 100 g riz cru » -> « 85 g riz cru » ; « 3 tranches pain complet » -> « 2,5 tranches pain complet »
+  const m=/^(\d+(?:[.,]\d+)?)\s*(g|ml|tranches?)?\s+(.*)$/.exec(txt);
+  if(!m)return txt;
+  const kw={oats:'avoine',rice:'riz',pasta:'pâtes',potatoes:'pommes de terre',semolina:'semoule',bread:'pain'}[k];
+  if(!kw||!m[3].toLowerCase().includes(kw))return txt;
+  let q=parseFloat(m[1].replace(',','.'))*f;
+  if(m[2]==='g'||m[2]==='ml')return `${Math.max(5,Math.round(q/5)*5)} ${m[2]} ${m[3]}`;
+  q=Math.max(0.5,Math.round(q*2)/2);
+  return `${fmtN(q,1)} ${q>1?'tranches':'tranche'} ${m[3]}`;
+}
+// f = facteur appliqué aux féculents de la recette (1 = recette d'origine)
+function scaleMeal(m,f){
+  const ck=m.id+'|'+f;
+  if(mealCache.has(ck))return mealCache.get(ck);
+  const shop={};let cost=0.2;
+  Object.entries(m.shop).forEach(([k,q])=>{const qq=STARCH.has(k)?q*f:q;shop[k]=qq;cost+=qq/FOODS[k].packSize*price(k)});
+  let ingredients=m.ingredients;
+  if(f!==1)ingredients=m.ingredients.map(t=>{for(const k of Object.keys(m.shop))if(STARCH.has(k)){const r=scaleIngredient(t,k,f);if(r!==t)return r}return t});
+  const res={...m,f,kcal:Math.round((m.kcal+(f-1)*m.sk)/5)*5,protein:Math.round(m.protein+(f-1)*m.sp),cost:Math.round(cost*100)/100,shop,ingredients};
+  mealCache.set(ck,res);return res;
+}
+// facteur de féculents du jour pour atteindre les calories visées (0,5 à 1,8, par pas de 0,05)
+function dayFactor(date,baseMeals){
+  const S=baseMeals.reduce((a,m)=>a+m.sk,0),B=baseMeals.reduce((a,m)=>a+m.kcal,0);
+  if(S<=0)return 1;
+  const f=1+(targetKcal(date)-B)/S;
+  return Math.round(Math.min(1.8,Math.max(0.5,f))*20)/20;
+}
+function scaledDay(date,ids){const base=ids.map(i=>MEAL_BY_ID[i]),f=dayFactor(date,base);return{f,meals:base.map(m=>scaleMeal(m,f))}}
+
+// menus effectifs d'un cycle : menus de base, ajustés au budget quand les jours choisis le demandent
+function planCost(cs,ids){
+  const inv={};let total=0;
+  for(let w=0;w<4;w++){
+    const needs={};
+    for(let d=0;d<5;d++){
+      if(!dayOn(cs,w,d))continue;
+      scaledDay(dayDate(cs,w,d),ids[w][d]).meals.forEach(m=>Object.entries(m.shop).forEach(([k,q])=>{needs[k]=(needs[k]||0)+q}));
+    }
+    Object.entries(needs).forEach(([k,need])=>{
+      const f=FOODS[k],avail=inv[k]||0,deficit=Math.max(0,need-avail);
+      let bought=0;
+      if(deficit>0){const u=Math.ceil(deficit/f.packSize-1e-9);bought=u*f.packSize;total+=u*price(k)}
+      inv[k]=Math.max(0,avail+bought-need);
+    });
+  }
+  return total;
+}
+function optimizeIds(cs,base){
+  const budget=cycleBudget(cs),ids=base.map(w=>w.map(d=>d.slice()));
+  const info={changed:0,before:planCost(cs,ids),after:0};
+  let cost=info.before;
+  if(cost<=budget){info.after=cost;return{ids,info}}
+  for(let it=0;it<30&&cost>budget*0.98;it++){
+    let best=null;
+    for(let w=0;w<4;w++)for(let d=0;d<5;d++){
+      if(!dayOn(cs,w,d))continue;
+      for(let s=0;s<3;s++){
+        if(state.swaps[`${cs}|${w}|${d}|${s}`])continue;
+        const cur=ids[w][d][s];
+        for(const m of SLOTS[s].pool){
+          if(m.id===cur)continue;
+          let dup=false;for(let d2=0;d2<5;d2++)if(d2!==d&&dayOn(cs,w,d2)&&ids[w][d2][s]===m.id)dup=true;
+          if(dup)continue;
+          ids[w][d][s]=m.id;const c=planCost(cs,ids);ids[w][d][s]=cur;
+          if(!best||c<best.c)best={w,d,s,id:m.id,c};
+        }
+      }
+    }
+    if(!best||best.c>=cost-0.01)break;
+    ids[best.w][best.d][best.s]=best.id;cost=best.c;info.changed++;
+  }
+  info.after=cost;return{ids,info};
+}
+function cycleIds(cs){
+  const c=cycleCache.get(cs);if(c&&c.ver===ver)return c;
+  const o=optimizeIds(cs,planFor(cs).weeks),res={ver,ids:o.ids,info:o.info};
+  cycleCache.set(cs,res);return res;
+}
+function idAt(cs,w,d,s){
+  const sw=state.swaps[`${cs}|${w}|${d}|${s}`];
+  return MEAL_BY_ID[sw]?sw:cycleIds(cs).ids[w][d][s];
+}
+const mealSwapped=(cs,w,d,s)=>{const sw=state.swaps[`${cs}|${w}|${d}|${s}`];return !!(MEAL_BY_ID[sw]&&sw!==planFor(cs).weeks[w][d][s])};
+function dayPlan(cs,w,d){
+  const date=dayDate(cs,w,d),sd=scaledDay(date,[0,1,2].map(s=>idAt(cs,w,d,s)));
+  const tot=sd.meals.reduce((a,m)=>({kcal:a.kcal+m.kcal,prot:a.prot+m.protein,cost:a.cost+m.cost}),{kcal:0,prot:0,cost:0});
+  return{date,f:sd.f,meals:sd.meals,tot,target:targetKcal(date),on:dayOn(cs,w,d)};
+}
+
+function weekNeeds(cs,w){
+  const t={};
+  for(let d=0;d<5;d++){
+    if(!dayOn(cs,w,d))continue;
+    dayPlan(cs,w,d).meals.forEach(m=>Object.entries(m.shop).forEach(([k,v])=>{t[k]=(t[k]||0)+v}));
+  }
+  return t;
+}
+function purchasePlan(cs){
+  const inv={},weeks=[];let total=0;
+  for(let w=0;w<4;w++){
+    const needs=weekNeeds(cs,w),buys={};let cost=0;
+    Object.entries(needs).forEach(([k,need])=>{
+      const f=FOODS[k],avail=inv[k]||0,deficit=Math.max(0,need-avail);
+      let units=0,bought=0,c=0;
+      if(deficit>0){units=Math.ceil(deficit/f.packSize-1e-9);bought=units*f.packSize;c=units*price(k)}
+      const left=Math.max(0,avail+bought-need);inv[k]=left;
+      buys[k]={need,avail,units,left,cost:c};cost+=c;
+    });
+    total+=cost;weeks.push({needs,buys,cost});
+  }
+  return{weeks,total};
+}
+function fmtQty(k,v){
+  const f=FOODS[k];
+  if(f.unit==='g')return v>=1000?(v/1000).toLocaleString('fr-FR',{maximumFractionDigits:2})+' kg':Math.round(v)+' g';
+  if(f.unit==='ml')return v>=1000?(v/1000).toLocaleString('fr-FR',{maximumFractionDigits:2})+' L':Math.round(v)+' ml';
+  const n=Math.ceil(v-1e-9);
+  if(f.unit==='u')return n+' unité'+(n>1?'s':'');
+  if(f.unit==='tranche')return n+' tranche'+(n>1?'s':'');
+  if(f.unit==='boîte')return n+' boîte'+(n>1?'s':'');
+  return String(v);
+}
+const buyText=(k,p)=>FOODS[k].loose?`${p.units} ${p.units>1?FOODS[k].pack.toLowerCase():FOODS[k].pack.toLowerCase().replace(/s$/,'')}`:`${p.units} × ${FOODS[k].packLabel}`;
+function cycleSpend(cs){const end=addDays(cs,27);return state.spend.filter(x=>x.d>=cs&&x.d<=end).reduce((a,x)=>a+x.a,0)}
+
+/* ---------- Eau, repas cochés, ajouts ---------- */
+const QUICK=[
+  {n:'Whey 30 g',k:120,p:24,c:0.9},{n:'Skyr 150 g',k:90,p:16,c:0.42},{n:'2 œufs durs',k:150,p:13,c:0.47},
+  {n:'Banane',k:95,p:1,c:0.34},{n:'Pomme',k:75,p:0,c:0.37},{n:'Pain complet ×2',k:160,p:6,c:0.24}
+];
+function eatenOf(date,plan){
+  const e={kcal:0,prot:0,cost:0};
+  plan.meals.forEach((m,s)=>{if(state.checks[`${date}|${s}`]){e.kcal+=m.kcal;e.prot+=m.protein;e.cost+=m.cost}});
+  (state.extras[date]||[]).forEach(x=>{e.kcal+=x.k;e.prot+=x.p;e.cost+=x.c});
+  return e;
+}
+
+/* ---------- Interface ---------- */
+const view=document.getElementById('view');
+const ui={tab:'today',k:null,week:null,rcat:'all',rweek:false,q:''};
+let lastDay=todayKey();
+const keepScroll=fn=>{const y=window.scrollY;fn();window.scrollTo(0,y)};
+
+function viewDate(){const t=todayKey(),d=dow(t);return(d===0||d===6)?addDays(mondayOf(t),7):t}
+function uiCycle(){
+  const p=posOf(viewDate());
+  const k=ui.k==null?p.k:ui.k;
+  const w=ui.week==null?(ui.k==null||ui.k===p.k?p.week:0):ui.week;
+  return{k,w,cs:cycleStart(k),cur:p};
+}
+const chip=(t,c='')=>`<span class="chip ${c}">${t}</span>`;
+function bar(pct,cls=''){return `<div class="bar ${cls}${pct>1.0001?' over':''}"><i style="width:${Math.min(100,Math.max(0,pct*100)).toFixed(1)}%"></i></div>`}
+function ring(pct,color,big,small){
+  const r=38,c=2*Math.PI*r,p=Math.min(1,Math.max(0,pct));
+  return `<div class="ringbox"><svg viewBox="0 0 92 92" width="104" height="104" aria-hidden="true"><circle cx="46" cy="46" r="${r}" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="9"/>${p>0.004?`<circle cx="46" cy="46" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(c*p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 46 46)"/>`:''}</svg><div class="ringtxt"><b>${big}</b><small>${small}</small></div></div>`;
+}
+function gapText(delta,unit,tol){
+  const a=Math.abs(Math.round(delta));
+  if(a<=tol)return `<span class="ok">dans la cible</span>`;
+  return `<span class="warn">${delta>0?'+':'−'}${nf0.format(a)} ${unit}</span>`;
+}
+const TIPS=[
+  'Quand tu cuisines, prépare deux portions : le repas du lendemain est déjà prêt.',
+  'Skyr, œufs et thon sont les protéines les plus économiques : garde-en toujours en stock.',
+  'Pèse-toi toujours dans les mêmes conditions (matin, à jeun) pour que la courbe veuille dire quelque chose.',
+  'Regarde la liste de courses avant de partir : les restes de la semaine précédente sont déjà déduits.',
+  'Les féculents sont la variable d’ajustement : si tu as faim, garde les protéines et les légumes, joue sur le riz ou les pâtes.',
+  'Un repas raté ne ruine pas la semaine : coche ce que tu manges vraiment, l’appli ajuste les totaux.'
+];
+const tipOfDay=date=>TIPS[Math.floor(dateNumber(date)/864e5)%TIPS.length];
+const fText=f=>Math.abs(f-1)<0.03?'':`Féculents ×${fmtN(f,2)}`;
+
+/* Bandeaux : profil à compléter, poids qui a changé */
+function profileBanner(onGoal){
+  if(!profileReady())return onGoal?'': `<div class="note"><b>Calories sur mesure :</b> renseigne ton profil (âge, taille, poids, poids cible) pour que l’appli calcule tes calories selon tes séances. En attendant, objectifs fixes : ${kc(state.goals.kcal)} kcal et ${kc(state.goals.protein)} g de protéines.<div class="btns"><button class="btn sm gold" data-act="goto" data-tab="goal">Compléter mon profil</button></div></div>`;
+  const lw=lastWeight();
+  if(lw&&Math.abs(lw.kg-state.profile.weight)>=1.5)return `<div class="note">Ton poids est passé de ${fmtN(state.profile.weight)} à ${fmtN(lw.kg)} kg. Recalculer tes calories ?<div class="btns"><button class="btn sm gold" data-act="weight-sync">Recalculer avec ${fmtN(lw.kg)} kg</button></div></div>`;
+  return '';
+}
+
+/* --- Aujourd'hui --- */
+function renderToday(){
+  const today=todayKey(),d=dow(today);
+  ensureStart();
+  const p=posOf(today);
+  if(d===0||d===6)return renderWeekend(today);
+  if(p.upcoming){
+    return `<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>Ton cycle commence le ${dLong(state.start).toLowerCase()}</h2>
+    <p class="muted gap">D’ici là, tu peux déjà régler ton objectif, regarder les menus du premier cycle et préparer la liste de courses.</p>
+    <div class="btns"><button class="btn gold" data-act="goto" data-tab="goal">Mon objectif</button><button class="btn" data-act="goto" data-tab="menus">Menus</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`;
+  }
+  const cs=cycleStart(p.k),di=d-1,act=ACT[d],plan=dayPlan(cs,p.week,di),goalK=plan.target,goalP=targetProtein();
+  let h=profileBanner();
+  h+=`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>${esc(act.n)}</h2>
+    <div style="margin-top:6px">${chip('Cycle '+(p.k+1)+' · semaine '+(p.week+1)+'/4')}${chip(act.k==='force'?'Jour de force':'Jour de course','plain')}</div>
+    <div class="small muted gap">Objectif du jour : <b>${kc(goalK)} kcal</b> · <b>${kc(goalP)} g</b> de protéines${auto()?' (calculé pour ton profil)':''}</div></section>`;
+  if(!plan.on){
+    return h+`<section class="card"><h3>Jour non planifié</h3><p class="muted gap">Tu as décoché ce jour : pas de repas prévu, rien dans la liste de courses, et ton budget en tient compte.</p><div class="btns"><button class="btn gold" data-act="dayon" data-k="${cs}|${p.week}|${di}">Replanifier ce jour</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`+goalCards(today);
+  }
+  const E=eatenOf(today,plan),spent=cycleSpend(cs),bud=cycleBudget(cs),eatenMeals=[0,1,2].filter(s=>state.checks[`${today}|${s}`]).length;
+  const water=state.water[today]||0,wGoal=state.goals.water,remK=Math.max(0,goalK-E.kcal),remP=Math.max(0,goalP-E.prot);
+  h+=`<section class="card"><div class="rb"><h3>Mes objectifs du jour</h3><span class="small muted">${eatenMeals}/3 repas cochés</span></div>
+    <div class="rings gap">
+      <div>${ring(E.kcal/goalK,E.kcal>goalK*1.08?'#ff5a63':'#f5c518',kc(E.kcal),'/ '+kc(goalK)+' kcal')}<div class="ringcap">Calories</div></div>
+      <div>${ring(E.prot/goalP,E.prot>=goalP?'#58d39b':'#f5c518',kc(E.prot)+' g','/ '+kc(goalP)+' g')}<div class="ringcap">Protéines</div></div>
+    </div>
+    <div class="small muted gap" style="text-align:center">${E.kcal===0?'Coche tes repas au fil de la journée.':(remK>0||remP>0?`Il te reste <b>${kc(remK)} kcal</b> et <b>${kc(remP)} g</b> de protéines pour atteindre tes objectifs.`:'Objectifs du jour atteints.')}</div>
+    <div class="gap"><div class="rb small"><span>💧 Eau</span><span><b>${fmtN(water/1000)} L</b> / ${fmtN(wGoal/1000)} L</span></div>${bar(water/wGoal,'blue')}
+    <div class="btns"><button class="btn sm" data-act="water" data-v="-250">− 250 ml</button><button class="btn sm gold" data-act="water" data-v="250">+ 250 ml</button><button class="btn sm" data-act="water" data-v="500">+ 500 ml</button></div></div>
+    <div class="gap"><div class="rb small"><span>🛒 Budget du cycle (${cycleDays(cs)} jours)</span><span><b>${euro(spent)}</b> / ${euro(bud)}</span></div>${bar(bud>0?spent/bud:0)}</div></section>`;
+  h+=`<section class="card"><div class="rb"><h3>Repas du jour</h3><span class="small muted">${kc(plan.tot.kcal)} kcal · ${kc(plan.tot.prot)} g</span></div>${fText(plan.f)?`<div class="small muted">${fText(plan.f)} pour atteindre ${kc(goalK)} kcal</div>`:''}`;
+  plan.meals.forEach((m,s)=>{h+=mealRow(m,s,today,cs,p.week,di)});
+  h+=`<div class="quick">${QUICK.map((q,i)=>`<button type="button" data-act="quick" data-i="${i}">+ ${esc(q.n)}</button>`).join('')}</div>
+    <div class="small muted" style="margin-top:6px">Touche un ajout pour l’ajouter aux totaux du jour (quantités approximatives).</div>`;
+  const ex=state.extras[today]||[];
+  if(ex.length)h+=`<div class="gap">${ex.map((x,i)=>`<div class="exrow" style="grid-template-columns:1fr auto auto"><span>${esc(x.n)}</span><span class="d">${kc(x.k)} kcal · ${kc(x.p)} g</span><button type="button" data-act="extra-del" data-i="${i}" aria-label="Retirer">✕</button></div>`).join('')}</div>`;
+  h+=`<details class="gap"><summary>Ajout libre</summary><div class="grid3 gap"><label class="f">Nom<input id="xn" type="text" placeholder="Barre, fruit…"></label><label class="f">kcal<input id="xk" inputmode="numeric" placeholder="200"></label><label class="f">Prot. (g)<input id="xp" inputmode="numeric" placeholder="20"></label></div><button class="btn sm gold gap" data-act="extra-add">Ajouter</button></details></section>`;
+  h+=goalCards(today);
+  h+=`<section class="card"><div class="eyebrow">Conseil</div><p class="gap">${esc(act.k==='force'?'Jour de force : déjeune 2 à 3 h avant la séance et garde un repas riche en protéines après, pour la récupération.':'Jour de course : privilégie les féculents (riz, pâtes, pommes de terre) au repas précédent et bois régulièrement.')} ${esc(tipOfDay(today))}</p></section>`;
+  return h;
+}
+function goalCards(today){
+  const lw=lastWeight();
+  return `<section class="card"><div class="rb"><h3>⚖️ Poids de corps</h3>${lw?`<span class="small muted">dernier : <b>${fmtN(lw.kg)} kg</b> (${dShort(lw.d)})</span>`:''}</div>
+    <div class="grid2 gap" style="align-items:end"><label class="f">Poids du jour (kg)<input id="wkg" inputmode="decimal" placeholder="${lw?fmtN(lw.kg):'ex. 90'}"></label><button class="btn gold" data-act="weight-add">Enregistrer</button></div>
+    ${profileReady()?`<div class="small muted gap">Objectif : ${fmtN(state.profile.target)} kg · il te reste ${fmtN(Math.abs((lw?lw.kg:state.profile.weight)-state.profile.target))} kg ${energy().mode==='bulk'?'à prendre':'à perdre'}.</div>`:''}</section>`;
+}
+function renderWeekend(today){
+  const next=viewDate(),p=posOf(next),cs=cycleStart(p.k);
+  let h=profileBanner()+`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>Week-end : repos</h2>
+    <p class="muted gap">L’appli ne planifie que du lundi au vendredi. Profites-en pour récupérer et préparer la semaine.</p></section>`;
+  if(p.upcoming){
+    return h+`<section class="card"><p>Ton cycle commence le <b>${dLong(state.start).toLowerCase()}</b>.</p><div class="btns"><button class="btn gold" data-act="goto" data-tab="shop">Liste de courses</button><button class="btn" data-act="goto" data-tab="goal">Mon objectif</button></div></section>`;
+  }
+  const n=daysOn(cs,p.week);
+  h+=`<section class="card"><div class="rb"><h3>Semaine du ${dShort(next)}</h3>${chip(n+' jour'+(n>1?'s':'')+' planifié'+(n>1?'s':''),n===5?'good':'warn')}</div>
+    <p class="muted small gap">Coche les jours où tu veux des repas à la maison : les courses et le budget s’adaptent (${euro(budgetPerDay())} par jour planifié).</p>
+    <div class="days">${[0,1,2,3,4].map(d=>`<button type="button" data-act="dayon" data-k="${cs}|${p.week}|${d}" class="${dayOn(cs,p.week,d)?'on':''}">${['Lun','Mar','Mer','Jeu','Ven'][d]}<small>${dayOn(cs,p.week,d)?'✓':'—'}</small></button>`).join('')}</div>
+    <div class="btns"><button class="btn gold" data-act="goto" data-tab="shop">Ouvrir la liste de courses</button><button class="btn" data-act="goto" data-tab="menus">Voir les menus</button></div></section>`;
+  h+=goalCards(today)+`<section class="card"><div class="eyebrow">Conseil</div><p class="gap">${esc(tipOfDay(today))}</p></section>`;
+  return h;
+}
+function mealRow(m,s,date,cs,w,di){
+  const k=`${date}|${s}`,on=!!state.checks[k],sw=mealSwapped(cs,w,di,s);
+  return `<div class="meal ${on?'done':''}"><input class="chk" type="checkbox" data-chg="meal" data-k="${k}" ${on?'checked':''} aria-label="Repas mangé">
+    <div><div class="t">${SLOTS[s].ico} ${SLOTS[s].name}${sw?' · remplacé':''}</div><button class="n" data-act="recipe" data-id="${m.id}" data-f="${m.f}">${esc(m.name)}</button><div class="m">${m.kcal} kcal · <b>${m.protein} g</b> de protéines</div></div>
+    <div class="c">${euro(m.cost)}<button class="sw" data-act="swap" data-cs="${cs}" data-w="${w}" data-d="${di}" data-s="${s}">↻ changer</button></div></div>`;
+}
+
+/* --- Menus --- */
+function cycleNav(c){
+  const maxK=posOf(viewDate()).k+1;
+  return `<div class="card"><div class="cyc"><button data-act="cyc" data-v="-1" ${c.k<=0?'disabled':''} aria-label="Cycle précédent">‹</button><b>Cycle ${c.k+1}<span class="small muted" style="display:block;font-weight:600">${dShort(c.cs)} → ${dShort(addDays(c.cs,25))}${c.k===c.cur.k&&!c.cur.upcoming?' · en cours':''}</span></b><button data-act="cyc" data-v="1" ${c.k>=maxK?'disabled':''} aria-label="Cycle suivant">›</button></div></div>`;
+}
+function weekSeg(c){
+  return `<div class="seg">${[0,1,2,3].map(i=>`<button type="button" data-act="week" data-w="${i}" class="${c.w===i?'on':''}">Semaine ${i+1}<small>${dShort(dayDate(c.cs,i,0))} – ${dShort(dayDate(c.cs,i,4))}</small></button>`).join('')}</div>`;
+}
+function dayToggles(c){
+  const n=daysOn(c.cs,c.w);
+  return `<div class="card"><div class="rb"><h3>Jours planifiés</h3>${chip(n+' / 5',n===5?'good':'warn')}</div>
+    <div class="days">${[0,1,2,3,4].map(d=>`<button type="button" data-act="dayon" data-k="${c.cs}|${c.w}|${d}" class="${dayOn(c.cs,c.w,d)?'on':''}">${['Lun','Mar','Mer','Jeu','Ven'][d]}<small>${dayOn(c.cs,c.w,d)?'✓':'—'}</small></button>`).join('')}</div>
+    <div class="small muted gap">Décoche un jour (restaurant, repas ailleurs…) : ses repas disparaissent des courses et son budget (${euro(budgetPerDay())}) est retiré. Budget de la semaine : <b>${euro(budgetPerDay()*n)}</b>.</div></div>`;
+}
+function renderMenus(){
+  ensureStart();
+  const c=uiCycle(),cs=c.cs,today=todayKey();
+  let h=cycleNav(c)+weekSeg(c)+dayToggles(c);
+  const info=cycleIds(cs).info;
+  if(info.changed>0)h+=`<div class="okbox">Menus ajustés au budget : ${info.changed} repas remplacés par des recettes moins chères pour tenir ${euro(cycleBudget(cs))}.</div>`;
+  let wk={kcal:0,prot:0,cost:0},nOn=0;
+  for(let d=0;d<5;d++){
+    const P=dayPlan(cs,c.w,d),act=actOf(P.date);
+    h+=`<section class="card ${P.date===today?'hero':''} ${P.on?'':'off'}"><div class="rb"><h2>${dLong(P.date)}</h2>${P.date===today?chip("Aujourd’hui",'good'):''}</div>
+      <div class="small muted" style="margin:3px 0 4px">${act.k==='force'?'💪':'🏃'} ${esc(act.n)}</div>`;
+    if(!P.on){h+=`<p class="muted small">Jour non planifié : pas de repas ni de courses.</p><div class="btns"><button class="btn sm" data-act="dayon" data-k="${cs}|${c.w}|${d}">Replanifier</button></div></section>`;continue}
+    nOn++;wk.kcal+=P.tot.kcal;wk.prot+=P.tot.prot;wk.cost+=P.tot.cost;
+    P.meals.forEach((m,s)=>{h+=mealRow(m,s,P.date,cs,c.w,d)});
+    const dk=P.tot.kcal-P.target,dp=P.tot.prot-targetProtein();
+    h+=`<div class="small muted" style="margin-top:8px"><b>${kc(P.tot.kcal)} kcal</b> (cible ${kc(P.target)} : ${gapText(dk,'kcal',60)}) · <b>${kc(P.tot.prot)} g</b> de protéines (${gapText(dp,'g',8)}) · ${euro(P.tot.cost)}${fText(P.f)?` · ${fText(P.f)}`:''}</div></section>`;
+  }
+  h+=`<section class="card"><h3>Résumé de la semaine ${c.w+1}</h3>${nOn?`<div class="kv"><span>Jours planifiés</span><span>${nOn} / 5</span><span>Moyenne par jour</span><span>${kc(wk.kcal/nOn)} kcal · ${kc(wk.prot/nOn)} g</span><span>Coût des repas</span><span>${euro(wk.cost)}</span></div>`:'<p class="muted small gap">Aucun jour planifié cette semaine.</p>'}</section>`;
+  return h;
+}
+
+/* --- Courses et budget --- */
+function renderShop(){
+  ensureStart();
+  const c=uiCycle(),cs=c.cs,pp=purchasePlan(cs),wk=pp.weeks[c.w],bud=cycleBudget(cs),nDays=cycleDays(cs),spent=cycleSpend(cs);
+  let h=cycleNav(c);
+  h+=`<section class="card hero"><div class="rb"><h2>Budget du cycle</h2>${chip(nDays===0?'aucun jour':pp.total<=bud+0.005?'dans le budget':'au-dessus',nDays===0?'plain':pp.total<=bud+0.005?'good':'red')}</div>
+    <div class="kv"><span>Jours planifiés</span><span>${nDays} / 20</span><span>Budget par jour planifié</span><span>${euro(budgetPerDay())}</span><span>Budget du cycle</span><span>${euro(bud)}</span><span>Courses prévues</span><span>${euro(pp.total)}</span><span>Dépensé réellement</span><span>${euro(spent)}</span><span>Reste sur le budget</span><span class="${bud-spent<0?'bad':'ok'}">${euro(bud-spent)}</span></div>
+    <div class="small muted gap">Dépensé réel</div>${bar(bud>0?spent/bud:0)}
+    <div class="small muted" style="margin-top:6px">Courses prévues</div>${bar(bud>0?pp.total/bud:0,'blue')}
+    <div class="small muted gap">Le budget est dégressif : ${euro(state.goals.budget)} pour 20 jours, soit ${euro(budgetPerDay())} par jour planifié ; chaque jour décoché retire sa part.</div>
+    <details class="gap"><summary>Noter une dépense</summary><div class="grid2 gap"><label class="f">Montant (€)<input id="sa" inputmode="decimal" placeholder="45,20"></label><label class="f">Magasin / note<input id="sl" type="text" placeholder="Courses semaine 1"></label></div><button class="btn sm gold gap" data-act="spend-add">Ajouter</button></details>
+    ${state.spend.filter(x=>x.d>=cs&&x.d<=addDays(cs,27)).sort((a,b)=>a.d<b.d?1:-1).map(x=>`<div class="exrow" style="grid-template-columns:62px 1fr auto auto"><span class="d">${dShort(x.d)}</span><span>${esc(x.l||'Courses')}</span><b>${euro(x.a)}</b><button type="button" data-act="spend-del" data-id="${x.id}" aria-label="Supprimer">✕</button></div>`).join('')}</section>`;
+  const info=cycleIds(cs).info;
+  if(info.changed>0)h+=`<div class="okbox">Menus ajustés au budget : ${info.changed} repas remplacés par des recettes moins chères (de ${euro(info.before)} à ${euro(info.after)}).</div>`;
+  else if(nDays>0&&pp.total>bud+0.005)h+=`<div class="warnbox">Même avec les recettes les moins chères, les courses dépassent le budget de ${euro(pp.total-bud)}. Planifie moins de jours ou augmente le budget dans les réglages.</div>`;
+  h+=weekSeg(c)+dayToggles(c);
+  const nOn=daysOn(cs,c.w);
+  h+=`<section class="card"><div class="rb"><h2>Semaine ${c.w+1}</h2><b>${euro(wk.cost)}</b></div><div class="small muted">${nOn?`${nOn} jour${nOn>1?'s':''} du ${dShort(dayDate(cs,c.w,0))} au ${dShort(dayDate(cs,c.w,4))} — les restes des semaines précédentes sont déjà déduits. Ce que tu gardes en stock sert aux semaines suivantes.`:'Aucun jour planifié : rien à acheter cette semaine.'}</div></section>`;
+  const keys=Object.keys(wk.needs),buy=keys.filter(k=>wk.buys[k].units>0),stock=keys.filter(k=>wk.buys[k].units===0);
+  const rowFor=k=>{
+    const p=wk.buys[k],f=FOODS[k],ck=`${cs}|${c.w}|${k}`,on=!!state.shop[ck];
+    return `<div class="shoprow ${p.units===0?'stock':''} ${on?'ck':''}"><input class="chk" type="checkbox" data-chg="shop" data-k="${ck}" ${on?'checked':''} aria-label="Acheté"><div><b>${f.pack}</b><div class="small muted">Besoin : ${fmtQty(k,p.need)}${p.avail>0?' · en stock : '+fmtQty(k,p.avail):''}${p.left>0?' · reste : '+fmtQty(k,p.left):''}</div></div><div class="q">${p.units>0?buyText(k,p):'En stock'}</div></div>`;
+  };
+  CAT_ORDER.forEach(cat=>{
+    const items=buy.filter(k=>FOODS[k].cat===cat);
+    if(!items.length)return;
+    h+=`<section class="card"><h3>${cat}</h3>${items.map(rowFor).join('')}</section>`;
+  });
+  if(stock.length)h+=`<section class="card"><h3>Déjà en stock</h3>${stock.map(rowFor).join('')}</section>`;
+  h+=`<section class="card"><details><summary>Prix des conditionnements</summary><p class="muted small gap">Ajuste les prix à ceux de ton magasin : le budget prévu se recalcule.</p>${Object.keys(FOODS).map(k=>`<label class="f" style="display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;margin-top:8px"><span>${FOODS[k].pack} · <span class="muted">${FOODS[k].packLabel}</span></span><input inputmode="decimal" data-chg="price" data-k="${k}" value="${fmtN(price(k),2).replace(/^(\d+)$/,'$1,00')}" aria-label="Prix de ${esc(FOODS[k].pack)}"></label>`).join('')}<div class="btns"><button class="btn sm" data-act="prices-reset">Remettre les prix d’origine</button></div></details></section>`;
+  h+=`<div class="note">Huile, sel, poivre, moutarde, vinaigre, ail, citron et épices sont considérés comme fonds de placard. Les quantités de riz, pâtes, pommes de terre, semoule, pain et avoine sont ajustées à tes calories.</div>`;
+  return h;
+}
+
+/* --- Objectif : profil, calories, efficacité --- */
+function sparkline(){
+  const ws=state.weights.slice(-30);
+  if(ws.length<2)return '';
+  const min=Math.min(...ws.map(w=>w.kg)),max=Math.max(...ws.map(w=>w.kg)),span=Math.max(0.5,max-min);
+  const px=i=>(8+i*(304/(ws.length-1))).toFixed(1),py=w=>(70-((w.kg-min)/span)*56).toFixed(1);
+  return `<svg class="spark" viewBox="0 0 320 84" preserveAspectRatio="none" role="img" aria-label="Courbe de poids"><polyline points="${ws.map((w,i)=>px(i)+','+py(w)).join(' ')}" fill="none" stroke="#f5c518" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${ws.map((w,i)=>`<circle cx="${px(i)}" cy="${py(w)}" r="3" fill="#fff"/>`).join('')}</svg><div class="rb small muted"><span>${fmtN(min)} kg</span><span>${fmtN(max)} kg</span></div>`;
+}
+// variation de poids prévue par semaine (kg) avec les jours planifiés du cycle
+function plannedWeekly(cs,E){
+  let kcal=0;
+  for(let w=0;w<4;w++)for(let d=0;d<5;d++){
+    if(!dayOn(cs,w,d))continue;
+    const date=dayDate(cs,w,d),k=ACT[dow(date)].k;
+    kcal+=E.targets[k]-E.tdee[k];
+  }
+  return kcal/4/7700;
+}
+function renderGoal(){
+  ensureStart();
+  const p=state.profile,E=energy(),today=todayKey(),lw=lastWeight(),c=uiCycle();
+  let h=profileBanner(true);
+  h+=`<section class="card hero"><h2>Mon objectif</h2><p class="muted small gap">L’appli calcule tes calories de chaque jour d’après tes séances ROAD TO GI, ton poids actuel et ton poids cible. Tout reste modifiable.</p></section>
+  <section class="card"><h3>Mon profil</h3><div class="grid2 gap">
+    <label class="f">Sexe<select data-chg="prof" data-k="sex"><option value="" ${p.sex===''?'selected':''}>—</option><option value="H" ${p.sex==='H'?'selected':''}>Homme</option><option value="F" ${p.sex==='F'?'selected':''}>Femme</option></select></label>
+    <label class="f">Âge<input inputmode="numeric" data-chg="prof" data-k="age" value="${p.age>0?p.age:''}" placeholder="ans"></label>
+    <label class="f">Taille (cm)<input inputmode="numeric" data-chg="prof" data-k="height" value="${p.height>0?p.height:''}" placeholder="cm"></label>
+    <label class="f">Poids actuel (kg)<input inputmode="decimal" data-chg="prof" data-k="weight" value="${p.weight>0?fmtN(p.weight):''}" placeholder="kg"></label>
+    <label class="f">Poids cible (kg)<input inputmode="decimal" data-chg="prof" data-k="target" value="${p.target>0?fmtN(p.target):''}" placeholder="kg"></label>
+    <label class="f">Activité hors séances<select data-chg="prof" data-k="pal">${[[1.2,'Assis toute la journée'],[1.3,'Plutôt sédentaire'],[1.45,'Debout / en mouvement'],[1.6,'Travail physique']].map(([v,l])=>`<option value="${v}" ${Math.abs(p.pal-v)<0.01?'selected':''}>${l}</option>`).join('')}</select></label></div>`;
+  if(E.ready&&E.mode!=='maint'){
+    h+=`<label class="f gap">${E.mode==='cut'?'Rythme de perte':'Rythme de prise'}<select data-chg="prof" data-k="rate">${rateOptions(E.mode).map(([v,l])=>`<option value="${v}" ${Math.abs(p.rate-v)<0.001?'selected':''}>${l}</option>`).join('')}</select></label>`;
+  }
+  h+=`</section>`;
+  if(!E.ready){
+    return h+`<div class="note">Complète tous les champs du profil (sexe, âge, taille, poids actuel, poids cible) : les calories et la durée estimée apparaîtront ici. Le poids et la date de départ peuvent aussi être repris de ROAD TO GI dans les réglages.</div>`+weightCard(today,lw);
+  }
+  const wk=plannedWeekly(c.cs,E),nDays=cycleDays(c.cs),loss=-wk;
+  const modeName=E.mode==='cut'?'Perte de poids':E.mode==='bulk'?'Prise de poids':'Maintien';
+  let verdict='',vshort='',vcls='';
+  if(E.mode==='cut'){
+    if(nDays===0){vshort='Aucun jour planifié';verdict='Aucun jour planifié : pas de déficit à évaluer.';vcls='warn'}
+    else if(loss<0.15){vshort='Déficit trop faible';verdict='Déficit trop faible pour être efficace. Planifie plus de jours ou choisis un rythme plus rapide.';vcls='warn'}
+    else if(loss<=0.8){vshort='Déficit efficace';verdict='Déficit efficace et soutenable.';vcls='good'}
+    else{vshort='Déficit agressif';verdict='Déficit agressif : risque de perte de muscle et de fatigue. Choisis un rythme plus doux.';vcls='red'}
+  }else if(E.mode==='bulk'){
+    if(wk<0.05){vshort='Surplus trop faible';verdict='Surplus trop faible pour prendre du poids. Planifie plus de jours ou choisis un rythme plus rapide.';vcls='warn'}
+    else if(wk<=0.35){vshort='Surplus adapté';verdict='Surplus adapté à une prise de poids propre.';vcls='good'}
+    else{vshort='Surplus important';verdict='Surplus important : une bonne part serait du gras. Choisis un rythme plus doux.';vcls='red'}
+  }else{vshort='Équilibre';verdict='Ton poids est proche de ton objectif : les calories visées égalent ta dépense.';vcls='good'}
+  const rightWay=(E.mode==='cut'&&wk<0)||(E.mode==='bulk'&&wk>0),eff=rightWay?Math.abs(wk):0,weeks=eff>0.02?Math.abs(E.diff)/eff:null;
+  const dateGoal=weeks?addDays(today,Math.round(weeks*7)):null;
+  h+=`<section class="card hero"><div class="rb"><h3>${modeName}</h3>${chip(vshort,vcls)}</div>
+    <div class="grid2 gap"><div><div class="big">${kc(E.targets.force)}</div><div class="small muted">kcal les jours de force<br>(lun · mer · ven)</div></div><div><div class="big">${kc(E.targets.course)}</div><div class="small muted">kcal les jours de course<br>(mar · jeu)</div></div></div>
+    <div class="kv"><span>Protéines</span><span>${kc(E.protein)} g / jour</span><span>Dépense estimée</span><span>${kc(E.tdee.force)} à ${kc(E.tdee.course)} kcal</span><span>Écart par jour planifié</span><span>${sgn(E.targets.force-E.tdee.force,0)} kcal</span>${E.mode==='maint'?'':`<span>Rythme estimé (${nDays} jours planifiés)</span><span>${sgn(wk,2)} kg / semaine</span><span>Poids cible atteint</span><span>${dateGoal?`vers le ${dShort(dateGoal)} (${Math.ceil(weeks)} sem.)`:'—'}</span>`}</div>
+    <p class="gap small">${esc(verdict)}</p>${E.capped?`<div class="warnbox">Le déficit demandé a été limité par sécurité (jamais sous ${kc(E.floor)} kcal ni plus de 25 % sous ta dépense).</div>`:''}
+    <p class="small muted gap">Le week-end n’est pas planifié : il est supposé à l’équilibre, donc moins tu planifies de jours, plus l’objectif est long à atteindre.</p></section>`;
+  // ajustement d'après la courbe réelle
+  const tr=weightTrend(today);
+  if(tr&&E.mode!=='maint'){
+    const planned=wk,diff=tr.perWeek-planned,nAvg=Math.max(1,nDays/4);
+    h+=`<section class="card"><h3>Ma courbe réelle</h3><div class="kv"><span>Mesuré (${tr.n} pesées)</span><span>${sgn(tr.perWeek,2)} kg / sem.</span><span>Prévu</span><span>${sgn(planned,2)} kg / sem.</span></div>`;
+    if(Math.abs(diff)>0.2){
+      const adj=Math.max(-300,Math.min(300,Math.round(-diff*7700/nAvg/10)*10)); // kcal par jour planifié pour rattraper l'écart
+      const newTotal=Math.max(-400,Math.min(400,p.adjust+adj));
+      const E2=energy(newTotal),changes=E2.targets.force!==E.targets.force||E2.targets.course!==E.targets.course;
+      h+=`<p class="small gap">${diff>0&&E.mode==='cut'?'Tu perds moins vite que prévu':diff<0&&E.mode==='cut'?'Tu perds plus vite que prévu':diff>0?'Tu prends plus vite que prévu':'Tu prends moins vite que prévu'}. Ajustement conseillé : <b>${sgn(adj,0)} kcal par jour</b>.</p>${changes?`<div class="btns"><button class="btn sm gold" data-act="adjust" data-v="${newTotal}">Appliquer l’ajustement</button></div>`:`<div class="warnbox">Tes calories sont déjà au minimum conseillé pour ton profil : les baisser encore ne serait pas raisonnable. Planifie plus de jours, vérifie que tu coches bien tes repas réels, et laisse la courbe se stabiliser quelques semaines.</div>`}`;
+    }else h+=`<div class="okbox">Ta courbe suit la prévision : rien à changer.</div>`;
+    if(p.adjust)h+=`<p class="small muted gap">Ajustement en cours : ${sgn(p.adjust,0)} kcal par jour. <button class="btn sm" data-act="adjust" data-v="0">Annuler</button></p>`;
+    h+=`</section>`;
+  }
+  h+=`<section class="card"><h3>Mes séances ROAD TO GI</h3><p class="muted small">Dépense d’énergie estimée par jour (métabolisme + vie courante + séance).</p>
+    ${[1,2,3,4,5].map(d=>{const a=ACT[d],t=a.k==='force'?E.tdee.force:E.tdee.course;return `<div class="act ${dow(today)===d?'today':''}"><span>${DAY_NAMES[d]}</span><span>${esc(a.n)}</span><b>${kc(t)} kcal</b></div>`}).join('')}
+    <div class="act"><span>Samedi</span><span>Course + circuit <span class="d">(non planifié)</span></span><b>—</b></div><div class="act"><span>Dimanche</span><span>Repos <span class="d">(non planifié)</span></span><b>—</b></div>
+    <div class="btns"><a class="btn" href="../road-to-gi/">Ouvrir ROAD TO GI</a></div></section>`;
+  h+=weightCard(today,lw);
+  h+=`<section class="card"><details><summary>Comment c’est calculé</summary><div class="small muted gap">Métabolisme de base (Mifflin-St Jeor) : ${kc(E.bmr)} kcal. × ${fmtN(p.pal,2)} pour ta vie courante = ${kc(E.base)} kcal, plus la séance : ${fmtN(p.kgForce,1)} kcal par kg les jours de force et ${fmtN(p.kgCourse,1)} kcal par kg les jours de course (estimation moyenne).<br><br>Un kilo de graisse correspond à environ 7 700 kcal. L’écart voulu par semaine est réparti sur les 5 jours planifiés. Protéines : ${fmtN(p.protKg,1)} g par kg.<br><br>Ce sont des estimations : ta courbe de poids réelle sert à corriger le tir. Pas de régime en dessous de ${kc(E.floor)} kcal.</div></details></section>`;
+  return h;
+}
+function weightCard(today,lw){
+  return `<section class="card"><div class="rb"><h3>⚖️ Suivi du poids</h3>${lw?`<span class="small muted"><b>${fmtN(lw.kg)} kg</b> · ${dShort(lw.d)}</span>`:''}</div>${sparkline()}
+    <div class="grid2 gap" style="align-items:end"><label class="f">Poids du jour (kg)<input id="wkg" inputmode="decimal" placeholder="${lw?fmtN(lw.kg):'ex. 90'}"></label><button class="btn gold" data-act="weight-add">Enregistrer</button></div>
+    ${state.weights.slice(-4).reverse().map(w=>`<div class="exrow" style="grid-template-columns:90px 1fr auto"><span class="d">${dShort(w.d)}</span><span>${fmtN(w.kg)} kg</span><button type="button" data-act="weight-del" data-d="${w.d}" aria-label="Supprimer">✕</button></div>`).join('')}</section>`;
+}
+
+/* --- Recettes --- */
+function recipeBody(m){
+  return `<div><span class="chip plain">${m.type}</span><span class="chip">${m.kcal} kcal</span><span class="chip">${m.protein} g prot.</span><span class="chip plain">${euro(m.cost)}</span></div>
+  <div class="gap">${m.ingredients.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div>
+  <ol>${m.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+  <div class="tip"><b>Astuce :</b> ${esc(m.tips)}</div><div class="tip"><b>Alternative :</b> ${esc(m.swap)}</div>`;
+}
+function weekMealIds(){
+  const c=uiCycle(),ids=new Set();
+  for(let d=0;d<5;d++)for(let s=0;s<3;s++)if(dayOn(c.cs,c.w,d))ids.add(idAt(c.cs,c.w,d,s));
+  return ids;
+}
+function recipeListHtml(){
+  const wk=ui.rweek?weekMealIds():null,q=ui.q.trim().toLowerCase();
+  const all=[...BREAKFASTS,...LUNCHES,...DINNERS].filter(m=>(ui.rcat==='all'||m.type===ui.rcat)&&(!wk||wk.has(m.id))&&(!q||m.name.toLowerCase().includes(q)||m.ingredients.some(x=>x.toLowerCase().includes(q))));
+  if(!all.length)return `<p class="muted gap">Aucune recette ne correspond.</p>`;
+  return all.map(m=>`<details class="card rcp"><summary><b>${esc(m.name)}</b><div class="small muted" style="margin-top:3px">${m.type} · ${m.kcal} kcal · ${m.protein} g · ${euro(scaleMeal(m,1).cost)}</div></summary><div class="body">${recipeBody(scaleMeal(m,1))}</div></details>`).join('');
+}
+function renderRecipes(){
+  const cats=[['all','Toutes'],['Matin','Matin'],['Midi','Midi'],['Soir','Soir']];
+  return `<div class="card"><input id="rq" class="search" type="search" placeholder="Rechercher une recette ou un ingrédient…" value="${esc(ui.q)}" style="margin:0">
+    <div class="seg" style="margin:10px 0 0">${cats.map(([v,l])=>`<button type="button" data-act="rcat" data-v="${v}" class="${ui.rcat===v?'on':''}">${l}</button>`).join('')}</div>
+    <label class="small muted" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input class="chk" style="width:22px;height:22px" type="checkbox" data-chg="rweek" ${ui.rweek?'checked':''}>Seulement les recettes de la semaine affichée</label>
+    <div class="small muted" style="margin-top:8px">Quantités de la recette d’origine ; dans les menus, les féculents sont ajustés à tes calories.</div></div><div id="rlist">${recipeListHtml()}</div>`;
+}
+
+/* --- Réglages --- */
+function renderSettings(){
+  ensureStart();
+  const g=state.goals,r=readRtg();
+  return `<section class="card hero"><h2>Réglages</h2><p class="muted small gap">Du lundi au vendredi uniquement : le week-end n’est pas planifié. Version ${APP_VERSION}.</p></section>
+  <section class="card"><h3>Budget et objectifs</h3><div class="grid2 gap">
+    <label class="f">Budget du cycle de 20 jours (€)<input inputmode="decimal" data-chg="goal" data-k="budget" value="${fmtN(g.budget,2)}"></label>
+    <label class="f">Eau / jour (ml)<input inputmode="numeric" data-chg="goal" data-k="water" value="${g.water}"></label></div>
+    <label class="small muted gap" style="display:flex;gap:8px;align-items:center"><input class="chk" style="width:22px;height:22px" type="checkbox" data-chg="goalauto" ${g.auto?'checked':''}>Calculer calories et protéines depuis mon profil (onglet Objectif)</label>
+    <div class="grid2 gap"><label class="f">Calories / jour (mode fixe)<input inputmode="numeric" data-chg="goal" data-k="kcal" value="${g.kcal}"></label>
+    <label class="f">Protéines / jour (mode fixe, g)<input inputmode="numeric" data-chg="goal" data-k="protein" value="${g.protein}"></label></div>
+    <p class="small muted gap">Le budget est réparti par jour planifié (${euro(budgetPerDay())} par jour). Les objectifs fixes servent tant que le profil est incomplet ou que le calcul automatique est décoché.</p></section>
+  <section class="card"><h3>Dépense des séances</h3><p class="small muted">Calories brûlées par kg de poids de corps pendant une séance (réglage avancé).</p><div class="grid2 gap">
+    <label class="f">Jour de force (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgForce" value="${fmtN(state.profile.kgForce,1)}"></label>
+    <label class="f">Jour de course (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgCourse" value="${fmtN(state.profile.kgCourse,1)}"></label></div></section>
+  <section class="card"><h3>Début de ma préparation</h3><label class="f gap">Lundi de départ (semaine 1 du cycle 1)<input type="date" data-chg="start" value="${state.start}"></label>
+    <p class="small muted gap">Les cycles de menus avancent par blocs de 4 semaines à partir de cette date. Mets la même date que dans ROAD TO GI.</p></section>
+  <section class="card"><h3>Reprendre mes données de ROAD TO GI</h3>
+    <p class="small muted">Reprend la date de départ et ton poids. Si les deux applis sont ouvertes dans le même navigateur, le bouton suffit ; sinon colle la sauvegarde de ROAD TO GI (Profil &gt; Sauvegarde &gt; Copier).</p>
+    <div class="btns"><button class="btn gold" data-act="rtg-import" ${r?'':'disabled style="opacity:.5"'}>Importer depuis ce navigateur</button><a class="btn" href="../road-to-gi/">Ouvrir ROAD TO GI</a></div>
+    <textarea id="rtgText" class="gap" spellcheck="false" placeholder="Colle ici la sauvegarde ROAD TO GI"></textarea><div class="btns"><button class="btn" data-act="rtg-paste">Importer le texte collé</button></div><p id="rtgStatus" class="small muted gap" role="status"></p></section>
+  <section class="card"><h3>Menus</h3><p class="small muted">Remplace les menus du cycle affiché par de nouveaux, avec au moins 70 % de repas différents. Tes remplacements manuels de ce cycle sont effacés.</p><div class="btns"><button class="btn" data-act="reroll">Nouveau cycle de menus</button></div></section>
+  <section class="card"><h3>Sauvegarde</h3><p class="small muted">Copie tes données pour les retrouver après un changement de téléphone ou une réinstallation.</p>
+    <div class="btns"><button class="btn gold" data-act="backup-copy">Copier ma sauvegarde</button><button class="btn" data-act="backup-restore">Restaurer</button></div>
+    <textarea id="backupText" class="gap" spellcheck="false" placeholder="Colle ici une sauvegarde puis touche Restaurer"></textarea><p id="backupStatus" class="small muted gap" role="status"></p></section>
+  <section class="card"><h3>Zone dangereuse</h3><div class="btns"><button class="btn red" data-act="reset">Tout effacer</button></div></section>`;
+}
+
+/* ---------- Fenêtres (recette, remplacement d'un repas) ---------- */
+const modal=document.getElementById('modal');
+function openModal(html){modal.innerHTML=`<div class="sheet"><button class="btn sm x" data-act="close" type="button" aria-label="Fermer">✕</button>${html}</div>`;modal.hidden=false;document.body.style.overflow='hidden'}
+function closeModal(){modal.hidden=true;modal.innerHTML='';document.body.style.overflow=''}
+modal.addEventListener('click',e=>{
+  if(e.target===modal||e.target.closest('[data-act="close"]')){closeModal();return}
+  const t=e.target.closest('[data-act="pick"]');
+  if(t){
+    const k=`${t.dataset.cs}|${t.dataset.w}|${t.dataset.d}|${t.dataset.s}`;
+    if(t.dataset.id==='')delete state.swaps[k];else state.swaps[k]=t.dataset.id;
+    bump();save();closeModal();keepScroll(render);toast(t.dataset.id===''?'Repas d’origine remis':'Repas remplacé');
+  }
+});
+function openRecipe(id,f){const m=MEAL_BY_ID[id];if(m)openModal(`<h2>${esc(m.name)}</h2><div class="gap">${recipeBody(scaleMeal(m,f||1))}</div>`)}
+function openSwap(cs,w,d,s){
+  const P=dayPlan(cs,w,d),cur=P.meals[s],orig=MEAL_BY_ID[planFor(cs).weeks[w][d][s]];
+  const opts=SLOTS[s].pool.map(m0=>{
+    const m=scaleMeal(m0,P.f),dk=m.kcal-cur.kcal,dp=m.protein-cur.protein;
+    return `<button class="opt ${m0.id===cur.id?'cur':''}" data-act="pick" data-cs="${cs}" data-w="${w}" data-d="${d}" data-s="${s}" data-id="${m0.id===orig.id?'':m0.id}"><div><b>${esc(m0.name)}</b><small>${m.kcal} kcal (${dk>=0?'+':''}${dk}) · ${m.protein} g (${dp>=0?'+':''}${dp}) · ${euro(m.cost)}${m0.id===orig.id?' · menu prévu':''}</small></div><span>${m0.id===cur.id?'✓':''}</span></button>`;
+  }).join('');
+  openModal(`<h2>Changer le repas</h2><p class="muted small gap">${SLOTS[s].ico} ${SLOTS[s].name} · ${dLong(dayDate(cs,w,d))}. La liste de courses se met à jour.</p><div class="gap">${opts}</div>`);
+}
+
+/* ---------- Petits messages ---------- */
+let toastT=null;
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},2600)}
+
+/* ---------- Affichage et événements ---------- */
+const TITLES={today:'Nutrition · du lundi au vendredi',menus:'Menus du cycle',shop:'Courses et budget',goal:'Poids, calories, objectif',recipes:'Recettes',settings:'Réglages'};
+function render(){
+  const fn={today:renderToday,menus:renderMenus,shop:renderShop,goal:renderGoal,recipes:renderRecipes,settings:renderSettings}[ui.tab]||renderToday;
+  view.innerHTML=fn();
+  document.getElementById('sub').textContent=TITLES[ui.tab]||'';
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===ui.tab));
+  document.getElementById('gear').classList.toggle('on',ui.tab==='settings');
+}
+function goto(tab){ui.tab=tab;render();window.scrollTo(0,0)}
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)goto(b.dataset.tab)});
+document.getElementById('gear').addEventListener('click',()=>goto(ui.tab==='settings'?'today':'settings'));
+
+view.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const a=t.dataset.act,D=t.dataset;
+  switch(a){
+    case 'goto':goto(D.tab);break;
+    case 'recipe':openRecipe(D.id,Number(D.f)||1);break;
+    case 'swap':openSwap(D.cs,+D.w,+D.d,+D.s);break;
+    case 'cyc':{const c=uiCycle();ui.k=Math.max(0,c.k+Number(D.v));ui.week=0;render();break}
+    case 'week':ui.week=+D.w;keepScroll(render);break;
+    case 'dayon':{if(state.off[D.k])delete state.off[D.k];else state.off[D.k]=true;bump();save();keepScroll(render);break}
+    case 'water':{const d=todayKey();state.water[d]=Math.max(0,Math.min(10000,(state.water[d]||0)+Number(D.v)));save();keepScroll(render);break}
+    case 'quick':{const q=QUICK[+D.i],d=todayKey();(state.extras[d]??=[]).push({n:q.n,k:q.k,p:q.p,c:q.c});save();keepScroll(render);toast('Ajouté : '+q.n);break}
+    case 'extra-add':{
+      const n=(document.getElementById('xn').value||'').trim()||'Ajout',k=num(document.getElementById('xk').value),p=num(document.getElementById('xp').value);
+      if(!(k>=0)){toast('Indique les calories');break}
+      const d=todayKey();(state.extras[d]??=[]).push({n,k:Math.round(k),p:Number.isFinite(p)?Math.round(p):0,c:0});save();keepScroll(render);break;
+    }
+    case 'extra-del':{const d=todayKey();(state.extras[d]||[]).splice(+D.i,1);save();keepScroll(render);break}
+    case 'weight-add':{
+      const v=num(document.getElementById('wkg').value);
+      if(!(v>30&&v<250)){toast('Entre un poids en kg (ex. 89,5)');break}
+      setWeight(todayKey(),v);if(!(state.profile.weight>0)){state.profile.weight=v;bump()}
+      save();keepScroll(render);toast('Poids enregistré');break;
+    }
+    case 'weight-del':state.weights=state.weights.filter(w=>w.d!==D.d);save();keepScroll(render);break;
+    case 'weight-sync':{const lw=lastWeight();if(lw){state.profile.weight=lw.kg;bump();save();keepScroll(render);toast('Calories recalculées')}break}
+    case 'adjust':state.profile.adjust=Number(D.v)||0;bump();save();keepScroll(render);toast('Ajustement enregistré');break;
+    case 'spend-add':{
+      const v=num(document.getElementById('sa').value),l=(document.getElementById('sl').value||'').trim();
+      if(!(v>0)){toast('Indique un montant');break}
+      state.spend.push({id:Date.now().toString(36),d:todayKey(),l,a:Math.round(v*100)/100});save();keepScroll(render);toast('Dépense ajoutée');break;
+    }
+    case 'spend-del':state.spend=state.spend.filter(x=>x.id!==D.id);save();keepScroll(render);break;
+    case 'prices-reset':if(confirm('Remettre tous les prix d’origine ?')){state.prices={};bump();save();keepScroll(render)}break;
+    case 'rcat':ui.rcat=D.v;keepScroll(render);break;
+    case 'rtg-import':{const got=applyRtg(readRtg());save();document.getElementById('rtgStatus').textContent=got.length?'Repris : '+got.join(', ')+'.':'Rien à reprendre.';break}
+    case 'rtg-paste':{
+      const st=document.getElementById('rtgStatus');let data;
+      try{data=JSON.parse(document.getElementById('rtgText').value)}catch(err){st.textContent='Texte illisible : colle la sauvegarde complète.';break}
+      const s=data&&data.app==='road-to-gi'&&data.state;
+      if(!s||typeof s!=='object'){st.textContent='Ce texte n’est pas une sauvegarde ROAD TO GI.';break}
+      const got=applyRtg(s);save();st.textContent=got.length?'Repris : '+got.join(', ')+'.':'Rien à reprendre dans cette sauvegarde.';break;
+    }
+    case 'reroll':{
+      if(!confirm('Remplacer les menus du cycle affiché par de nouveaux menus ?'))break;
+      const c=uiCycle(),cur=planFor(c.cs),ch=differentSalt(c.cs,flatIds(cur.weeks),cur.salt+1);
+      state.rerolls[c.cs]=ch.salt;
+      Object.keys(state.swaps).filter(k=>k.startsWith(c.cs+'|')).forEach(k=>delete state.swaps[k]);
+      resetCaches();save();render();toast('Nouveaux menus pour ce cycle');break;
+    }
+    case 'backup-copy':{
+      const box=document.getElementById('backupText'),st=document.getElementById('backupStatus'),text=JSON.stringify({app:'ma-routine',version:2,state});
+      box.value=text;
+      (navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject()).then(()=>{st.textContent='Sauvegarde copiée. Colle-la dans une note ou un message à toi-même.'},()=>{box.focus();box.select();st.textContent='Copie le texte sélectionné ci-dessus.'});
+      break;
+    }
+    case 'backup-restore':{
+      const st=document.getElementById('backupStatus');let data;
+      try{data=JSON.parse(document.getElementById('backupText').value)}catch(err){st.textContent='Texte illisible : colle la sauvegarde complète.';break}
+      const s=data&&data.app==='ma-routine'&&data.state;
+      if(!s||typeof s!=='object'){st.textContent='Ce texte n’est pas une sauvegarde Ma Routine.';break}
+      if(!confirm('Remplacer les données de ce téléphone par cette sauvegarde ?'))break;
+      store.set(KEY,JSON.stringify(s));state=load();resetCaches();ensureStart();save();render();toast('Sauvegarde restaurée');break;
+    }
+    case 'reset':if(confirm('Tout effacer sur ce téléphone (objectifs, profil, repas cochés, poids) ?')){store.del(KEY);state=load();resetCaches();ensureStart();ui.k=null;ui.week=null;render();toast('Données effacées')}break;
+  }
+});
+view.addEventListener('change',e=>{
+  const t=e.target.closest('[data-chg]');if(!t)return;
+  const a=t.dataset.chg,k=t.dataset.k;
+  switch(a){
+    case 'meal':if(t.checked)state.checks[k]=true;else delete state.checks[k];save();keepScroll(render);break;
+    case 'shop':if(t.checked)state.shop[k]=true;else delete state.shop[k];save();keepScroll(render);break;
+    case 'goal':{
+      const v=num(t.value),min={budget:50,kcal:1200,protein:60,water:500}[k];
+      if(v>=min)state.goals[k]=k==='budget'?Math.round(v*100)/100:Math.round(v);
+      bump();save();keepScroll(render);break;
+    }
+    case 'goalauto':state.goals.auto=t.checked;bump();save();keepScroll(render);break;
+    case 'prof':{
+      const p=state.profile;
+      if(k==='sex')p.sex=t.value;
+      else if(k==='pal'||k==='rate'){const v=num(t.value);if(v>0)p[k]=v}
+      else{
+        const v=num(t.value),lim={age:[13,99],height:[120,230],weight:[30,250],target:[30,250],kgForce:[1,15],kgCourse:[1,15]}[k];
+        if(v>=lim[0]&&v<=lim[1])p[k]=(k==='age'||k==='height')?Math.round(v):Math.round(v*10)/10;
+        if(k==='weight'&&v>=30&&v<=250)setWeight(todayKey(),Math.round(v*10)/10);
+      }
+      // si le sens de l'objectif change, on prend le rythme du milieu
+      const E=energy();if(E.ready&&E.mode!=='maint'&&!rateOptions(E.mode).some(([v])=>Math.abs(v-p.rate)<0.001))p.rate=rateOptions(E.mode)[1][0];
+      bump();save();keepScroll(render);break;
+    }
+    case 'start':{
+      if(Number.isFinite(dateNumber(t.value))){state.start=mondayOf(t.value);resetCaches();ui.k=null;ui.week=null;save();render();toast('Départ : lundi '+dShort(state.start))}
+      break;
+    }
+    case 'price':{const v=num(t.value);if(v>0)state.prices[k]=Math.round(v*100)/100;else delete state.prices[k];bump();save();keepScroll(render);break}
+    case 'rweek':ui.rweek=t.checked;keepScroll(render);break;
+  }
+});
+view.addEventListener('input',e=>{
+  if(e.target.id==='rq'){ui.q=e.target.value;document.getElementById('rlist').innerHTML=recipeListHtml()}
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  const t=todayKey();if(t!==lastDay){lastDay=t;ui.k=null;ui.week=null;render()}
+});
+
+ensureStart();
+render();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>

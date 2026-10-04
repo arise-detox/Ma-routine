@@ -1,0 +1,16 @@
+{
+  "name": "Ma Routine — Nutrition",
+  "short_name": "Ma Routine",
+  "description": "Menus et listes de courses du lundi au vendredi, calculés selon tes séances ROAD TO GI, ton poids et ton budget.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a2457",
+  "theme_color": "#0a2457",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
