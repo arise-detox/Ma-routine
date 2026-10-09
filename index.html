@@ -11,6 +11,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ma Routine">
 <link rel="manifest" href="./manifest.json">
+<link rel="canonical" href="https://arise-detox.github.io/Ma-routine/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Ma Routine">
+<meta property="og:title" content="Ma Routine — menus, courses et budget pour ton sport">
+<meta property="og:description" content="Gratuite, sans compte ni pub : tes menus et tes courses de la semaine selon ton sport, ton poids et ton budget.">
+<meta property="og:url" content="https://arise-detox.github.io/Ma-routine/">
+<meta property="og:image" content="https://arise-detox.github.io/Ma-routine/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ma Routine : deux écrans de l'application sur fond sable">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ma Routine — menus, courses et budget pour ton sport">
+<meta name="twitter:description" content="Gratuite, sans compte ni pub : tes menus et tes courses de la semaine selon ton sport, ton poids et ton budget.">
+<meta name="twitter:image" content="https://arise-detox.github.io/Ma-routine/og.jpg">
 <link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <style>
@@ -483,7 +498,7 @@ Object.values(MEAL_BY_ID).forEach(m=>{
 const DEFAULT={
   goals:{budget:230,margin:15,kcal:2100,protein:180,water:2500,auto:true,wkBudget:40,wkComp:true},
   profile:{sex:'',age:0,height:0,weight:0,target:0,goal:'auto',rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7,kgLight:3,prog:'rtg',days:null},
-  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},wksalt:{},wshop:{},wkoff:{},near:null,
+  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},wksalt:{},wshop:{},wkoff:{},near:null,welcomed:false,hideInstall:false,
   fx:{rain:false,level:'low',color:'white',v:2}
 };
 function load(){
@@ -508,6 +523,59 @@ function save(){store.set(KEY,JSON.stringify(state))}
 let ver=0;const cycleCache=new Map(),mealCache=new Map(),planCache=new Map();
 function bump(){ver++;mealCache.clear();cycleCache.clear();wkCache.clear()}
 function resetCaches(){planCache.clear();bump()}
+
+/* ---------- Statistiques de visites facultatives : GoatCounter (sans cookie). Laisser vide = aucune statistique, aucune requête. ---------- */
+const STATS_CODE='';
+if(STATS_CODE&&/^[a-z0-9-]{2,40}$/.test(STATS_CODE)){const s=document.createElement('script');s.async=true;s.dataset.goatcounter='https://'+STATS_CODE+'.goatcounter.com/count';s.src='https://gc.zgo.at/count.js';document.head.appendChild(s)}
+const FEEDBACK_URL='https://github.com/arise-detox/Ma-routine/issues/new';
+const presentationUrl=()=>new URL('presentation.html',location.href.split('?')[0].split('#')[0]).href;
+
+/* ---------- Première ouverture : réglage de l'objectif en 30 secondes + astuce d'installation ---------- */
+const isIos=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)&&!window.MSStream;
+const isStandalone=()=>window.navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+const needWelcome=()=>!state.welcomed&&!profileReady();
+function welcomeCard(){
+  return `<section class="card hero" id="welcome"><div class="eyebrow">Bienvenue</div><h2>Règle ton objectif en 30 secondes</h2>
+    <p class="muted small gap">Ces informations restent sur ton téléphone. Elles servent à calculer tes calories ; tu pourras tout modifier ensuite dans l’onglet Objectif.</p>
+    <label class="f gap">Mon objectif<select id="w-goal"><option value="cut">Déficit · perdre du poids</option><option value="maint">Maintien · garder mon poids</option><option value="bulk">Prise de muscle · petit surplus</option></select></label>
+    <div class="grid2 gap"><label class="f">Sexe<select id="w-sex"><option value="">—</option><option value="H">Homme</option><option value="F">Femme</option></select></label>
+      <label class="f">Âge<input id="w-age" inputmode="numeric" placeholder="ans"></label>
+      <label class="f">Taille (cm)<input id="w-height" inputmode="numeric" placeholder="cm"></label>
+      <label class="f">Poids actuel (kg)<input id="w-weight" inputmode="decimal" placeholder="kg"></label>
+      <label class="f">Poids cible (kg)<input id="w-target" inputmode="decimal" placeholder="kg"></label>
+      <label class="f">Budget courses du cycle (€)<input id="w-budget" inputmode="decimal" value="${fmtN(state.goals.budget,2)}"></label></div>
+    <p id="w-msg" class="small bad gap" role="alert"></p>
+    <div class="btns"><button class="btn gold" data-act="welcome-go">Commencer</button><button class="btn" data-act="welcome-skip">Plus tard</button></div></section>`;
+}
+function welcomeGo(){
+  const v=id=>(document.getElementById(id)||{}).value||'',msg=document.getElementById('w-msg');
+  const goal=v('w-goal'),sex=v('w-sex'),age=Math.round(num(v('w-age'))),height=Math.round(num(v('w-height'))),weight=num(v('w-weight')),target=num(v('w-target')),budget=num(v('w-budget'));
+  if(sex!=='H'&&sex!=='F'){msg.textContent='Choisis ton sexe (il sert au calcul du métabolisme).';return}
+  if(!(age>=13&&age<=99)){msg.textContent='Entre ton âge (13 à 99 ans).';return}
+  if(!(height>=120&&height<=230)){msg.textContent='Entre ta taille en cm (120 à 230).';return}
+  if(!(weight>=30&&weight<=250)){msg.textContent='Entre ton poids en kg (30 à 250).';return}
+  if(goal!=='maint'&&!(target>=30&&target<=250)){msg.textContent='Entre ton poids cible en kg.';return}
+  const p=state.profile;
+  Object.assign(p,{sex,age,height,weight:Math.round(weight*10)/10,goal});
+  if(target>=30&&target<=250)p.target=Math.round(target*10)/10;
+  if(budget>=50)state.goals.budget=Math.round(budget*100)/100;
+  setWeight(todayKey(),p.weight);
+  const E=energy();if(E.ready&&E.mode!=='maint'&&!rateOptions(E.mode).some(([x])=>Math.abs(x-p.rate)<0.001))p.rate=rateOptions(E.mode)[1][0];
+  state.welcomed=true;bump();save();render();window.scrollTo(0,0);toast('C’est réglé : voilà ton objectif du jour');
+}
+function installHint(){
+  if(state.hideInstall||isStandalone()||!isIos())return '';
+  return `<section class="card"><h3>📲 Installe l’appli</h3><p class="small muted gap">Dans Safari, touche <b>Partager</b> (le carré avec la flèche), puis <b>Sur l’écran d’accueil</b> : elle s’ouvre en plein écran et marche sans réseau.</p><div class="btns"><button class="btn sm" data-act="install-ok">C’est fait</button></div></section>`;
+}
+function shareCard(){
+  return `<section class="card"><h3>💬 Partager Ma Routine</h3><p class="small muted gap">Un ami, un partenaire d’entraînement ? Envoie-lui le lien de présentation.</p>
+    <div class="btns"><button class="btn gold" data-act="share-app">Partager le lien</button><a class="btn" href="${FEEDBACK_URL}" target="_blank" rel="noopener">Donner mon avis</a></div></section>`;
+}
+async function shareApp(){
+  const url=presentationUrl(),data={title:'Ma Routine',text:'Menus, courses et budget pour ton sport : gratuit, sans compte.',url};
+  try{if(navigator.share){await navigator.share(data);return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(url);toast('Lien copié')}catch(e){prompt('Copie ce lien :',url)}
+}
 
 /* ---------- Accès réservé : le nom et les liens d'une application privée restent masqués tant que le code à 4 chiffres n'est pas saisi ---------- */
 // Ce n'est qu'un verrou d'affichage : il masque le nom dans l'appli, il ne protège pas un site public contre quelqu'un qui lit le code de la page.
@@ -883,6 +951,7 @@ function profileBanner(onGoal){
 function renderToday(){
   const today=todayKey(),d=dow(today);
   ensureStart();
+  if(needWelcome())return welcomeCard()+installHint();
   const p=posOf(today);
   if(d===0||d===6)return renderWeekend(today);
   if(p.upcoming){
@@ -891,7 +960,7 @@ function renderToday(){
     <div class="btns"><button class="btn gold" data-act="goto" data-tab="goal">Mon objectif</button><button class="btn" data-act="goto" data-tab="menus">Menus</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`;
   }
   const cs=cycleStart(p.k),di=d-1,act=ACT[d],plan=dayPlan(cs,p.week,di),goalK=plan.fullTarget,goalP=targetProtein();
-  let h=profileBanner();
+  let h=installHint()+profileBanner();
   h+=`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>${esc(act.n)}</h2>
     <div style="margin-top:6px">${chip('Cycle '+(p.k+1)+' · semaine '+(p.week+1)+'/4')}${chip(KIND_DAY[act.k],'plain')}</div>
     <div class="small muted gap">Objectif du jour : <b>${kc(goalK)} kcal</b> · <b>${kc(goalP)} g</b> de protéines${auto()?' (calculé pour ton profil)':''}${auto()&&wkCompKcal(today)>0?`<br>dont −${kc(wkCompKcal(today))} kcal pour le cheat meal de ce week-end  <button type="button" class="btn sm" data-act="goto" data-tab="cheat">voir</button>`:''}</div></section>`;
@@ -929,7 +998,7 @@ function goalCards(today){
 }
 function renderWeekend(today){
   const next=viewDate(),p=posOf(next),cs=cycleStart(p.k);
-  let h=profileBanner()+`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>Week-end : cheat meal</h2>
+  let h=installHint()+profileBanner()+`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>Week-end : cheat meal</h2>
     <p class="muted gap">Du lundi au vendredi, l’appli planifie tes repas. Le week-end, place au cheat meal : menus gourmands et courses à part, avec un budget de ${euro(wkBudget())}.</p></section>`+wkTodayCard(today);
   if(p.upcoming){
     return h+`<section class="card"><p>Ton cycle commence le <b>${dLong(state.start).toLowerCase()}</b>.</p><div class="btns"><button class="btn gold" data-act="goto" data-tab="shop">Liste de courses</button><button class="btn" data-act="goto" data-tab="goal">Mon objectif</button></div></section>`;
@@ -1526,6 +1595,7 @@ function renderSettings(){
     <p class="small muted">Reprend la date de départ et ton poids. Si les deux applis sont ouvertes dans le même navigateur, le bouton suffit ; sinon colle la sauvegarde de ${RTGN()} (Profil &gt; Sauvegarde &gt; Copier).</p>
     <div class="btns"><button class="btn gold" data-act="rtg-import" ${r?'':'disabled style="opacity:.5"'}>Importer depuis ce navigateur</button><a class="btn" href="${RTG_URL}">Ouvrir ${RTGN()}</a></div>
     <textarea id="rtgText" class="gap" spellcheck="false" placeholder="Colle ici la sauvegarde ${RTGN()}"></textarea><div class="btns"><button class="btn" data-act="rtg-paste">Importer le texte collé</button></div><p id="rtgStatus" class="small muted gap" role="status"></p></section>`}
+  ${shareCard()}
   ${accessCard()}
   <section class="card"><h3>Menus</h3><p class="small muted">Remplace les menus du cycle affiché par de nouveaux, avec au moins 70 % de repas différents. Tes remplacements manuels de ce cycle sont effacés.</p><div class="btns"><button class="btn" data-act="reroll">Nouveau cycle de menus</button></div></section>
   <section class="card"><h3>Ambiance</h3>
@@ -1589,6 +1659,10 @@ view.addEventListener('click',e=>{
     case 'wkweek':ui.wk=addDays(ui.wk||wkDefaultSat(),7*Number(D.v));keepScroll(render);break;
     case 'wkreroll':{const s=ui.wk||wkDefaultSat();state.wksalt[s]=(state.wksalt[s]||0)+1;Object.keys(state.wkoff).filter(k=>k.startsWith(s+'|')).forEach(k=>delete state.wkoff[k]);bump();save();render();toast('Nouveau menu pour ce week-end');break}
     case 'wkmealtoggle':wkToggleMeal(D.k,!!state.wkoff[D.k]);break;
+    case 'welcome-go':welcomeGo();break;
+    case 'welcome-skip':state.welcomed=true;save();render();break;
+    case 'install-ok':state.hideInstall=true;save();keepScroll(render);break;
+    case 'share-app':shareApp();break;
     case 'pin-try':pinTry();break;
     case 'pin-lock':pinLock();break;
     case 'near-gps':nearGps();break;

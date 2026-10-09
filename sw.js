@@ -1,4 +1,4 @@
-const CACHE='ma-routine-v8';
+const CACHE='ma-routine-v9';
 const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./fonts/poppins-400.woff2','./fonts/poppins-500.woff2','./fonts/poppins-600.woff2'];
 const NETWORK_TIMEOUT=3500;
 // Ce service worker ne touche qu'aux caches « ma-routine- » : les autres applis du domaine partagent la même origine
@@ -19,6 +19,8 @@ self.addEventListener('fetch',e=>{
   const url=new URL(req.url);
   if(url.origin!==self.location.origin)return;
   if(req.mode==='navigate'){
+    // seule l'appli (racine ou index.html) est servie depuis le cache ; la page de présentation et les autres pages passent au réseau
+    if(!(url.pathname.endsWith('/')||url.pathname.endsWith('/index.html')))return;
     e.respondWith(networkWithTimeout(req).then(res=>{
       if(res.ok){const copy=res.clone();e.waitUntil(caches.open(CACHE).then(c=>c.put('./index.html',copy)))}
       return res;
