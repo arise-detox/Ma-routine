@@ -483,7 +483,7 @@ Object.values(MEAL_BY_ID).forEach(m=>{
 const DEFAULT={
   goals:{budget:230,margin:15,kcal:2100,protein:180,water:2500,auto:true,wkBudget:40,wkComp:true},
   profile:{sex:'',age:0,height:0,weight:0,target:0,goal:'auto',rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7},
-  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},wksalt:{},wshop:{},wkoff:{},
+  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},wksalt:{},wshop:{},wkoff:{},near:null,
   fx:{rain:false,level:'low',color:'white',v:2}
 };
 function load(){
@@ -494,6 +494,8 @@ function load(){
   if((saved.fx||{}).v!==2){s.fx={...base.fx,color:s.fx.color==='color'?'color':'white',level:s.fx.level||'low',rain:false,v:2}}
   ['prices','checks','extras','water','swaps','off','offMeal','shop','rerolls','wksalt','wshop','wkoff'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
   ['spend','weights'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+  if(!s.near||typeof s.near!=='object'||!(s.near.lat>=-90&&s.near.lat<=90&&s.near.lon>=-180&&s.near.lon<=180))s.near=null;
+  else s.near.km=[5,10,20,30].includes(s.near.km)?s.near.km:10;
   return s;
 }
 let state=load();
@@ -1083,7 +1085,7 @@ function renderCheat(){
     <div class="kv"><span>Budget du week-end</span><span>${euro(bud)}</span><span>Courses (au lot, prix Auchan)</span><span>${euro(B.total)}</span><span>Repas au menu</span><span>${nOn} / 6</span>${P.saved>0.004?`<span>Économisé en retirant des repas</span><span class="ok">${euro(P.saved)}</span>`:''}</div>
     ${bar(bud>0?B.total/bud:0)}
     <div class="small muted gap">Ces ${euro(bud)} s’ajoutent au budget du cycle. Décoche un repas pour le retirer : il sort des courses, du budget et de tes calories, et l’argent économisé s’affiche. Ce qui se garde (surgelés, épicerie) sert aux week-ends suivants du mois.</div>
-    <div class="btns"><button class="btn gold" data-act="wkreroll">↻ Nouveau menu pour ce week-end</button><button class="btn" data-act="goto" data-tab="goal">Modifier mon budget</button></div></section>`;
+    <div class="btns"><button class="btn gold" data-act="wkreroll">↻ Nouveau menu pour ce week-end</button><button class="btn" data-act="goto" data-tab="goal">Modifier mon budget</button><button class="btn" data-act="goto" data-tab="shop">📍 Prix près de moi</button></div></section>`;
   if(left<-0.005)h+=`<div class="warnbox">Même avec les recettes les moins chères essayées, les courses dépassent le budget de ${euro(-left)}. Les prix Auchan ont peut-être changé : ajuste-les dans les réglages, ou augmente le budget du week-end.</div>`;
   const E=energy();
   [0,1].forEach(day=>{
@@ -1132,6 +1134,163 @@ function wkTodayCard(today){
   return `<section class="card hero"><div class="rb"><h3>${th.ico} Cheat meal · ${esc(th.n)}</h3><span class="small muted">${kc(wkDayTot(P,day).kcal)} kcal</span></div>${[0,1,2].map(s=>wkMealRow(P,day*3+s)).join('')}<div class="small muted" style="margin-top:6px">Reste sur le budget du week-end : <b class="${wkBudget()-P.buy.total>=0?'ok':'bad'}">${euro(wkBudget()-P.buy.total)}</b>${P.saved>0.004?` · économisé en retirant des repas : <b>${euro(P.saved)}</b>`:''}</div><div class="btns"><button class="btn gold" data-act="goto" data-tab="cheat">Menu et courses du week-end</button></div></section>`;
 }
 
+/* ---------- Prix près de moi : relevés collaboratifs Open Prices (Open Food Facts), autour de ta position ---------- */
+// Auchan et les autres enseignes n'ouvrent pas leurs prix à une page web : on utilise les prix relevés en magasin par la communauté
+// (prices.openfoodfacts.org, licence ODbL). Ils couvrent surtout les produits courants, avec des marques variées : l'appli propose, tu choisis.
+const NEAR_API='https://prices.openfoodfacts.org/api/v1/prices';
+// [produit, catégorie Open Food Facts, poids ou volume du lot en kg ou L, « egg » = prix à l'œuf]
+const NEAR=[
+  ['petitsuisse','en:petits-suisses',0.72],['eggs','en:eggs',12,'egg'],['chicken','en:chicken-breasts',1],['tuna','en:canned-tunas',0.224],
+  ['oats','en:rolled-oats',0.5],['rice','en:rices',1],['pasta','en:spaghetti',0.5],['potatoes','en:potatoes',2.5],['bread','en:sliced-breads',0.825],
+  ['lentils','en:lentils',0.5],['veg','en:frozen-vegetables',0.75],['banana','en:bananas',0.65],['apple','en:apples',1],['onion','en:onions',1],
+  ['tomato','en:tomato-purees',0.6],['milk','en:uht-milks',6],['bun','en:hamburger-buns',0.3],['hdbread','en:hot-dog-buns',0.25],['wrap','en:wraps',0.37],
+  ['pizza','en:pizza-dough',0.26],['flour','en:wheat-flours',1],['fries','en:fries',1],['gnocchi','en:gnocchi',0.38],['lasagna','en:lasagna-sheets',0.25],
+  ['bacon','en:bacon',0.1],['lardons','en:lardons',0.2],['ham','en:hams',0.14],['chorizo','en:chorizo',0.12],['nugget','en:chicken-nuggets',0.5],
+  ['thigh','en:chicken-thighs',1],['cheddar','en:cheddar-slices',0.2],['mozza','en:grated-mozzarella',0.15],['rtom','en:tomatoes',1],['pepper','en:peppers',0.5],
+  ['mush','en:mushrooms',0.25],['corn','en:canned-sweet-corn',0.285],['cream','en:sour-creams',0.2],['butter','en:butters',0.25],['ketchup','en:ketchup',0.56],
+  ['mayo','en:mayonnaises',0.47],['bbq','en:barbecue-sauces',0.48],['soy','en:soy-sauces',0.15],['pickle','en:gherkins',0.36],['sugar','en:sugars',1],
+  ['honey','en:honeys',0.25],['spread','en:chocolate-spreads',0.63],['coco','en:coconut-milks',0.2],
+];
+const NEAR_KM=[5,10,20,30],NEAR_DAYS=270;   // les relevés sont rares : on remonte à 9 mois
+// petits commerces de proximité et enseignes bio : plus chers que les supermarchés, écartés sauf si on les inclut
+const NEAR_SMALL=/express|city\b|monop|franprix|c['’ ]?mon\b|\bspar\b|proxi|vival|8 ?à ?huit|\bg20\b|biocoop|naturalia|la vie claire|bio ?c['’ ]?bon|grand frais|picard|thiriet|carrefour contact|casino|sherpa|utile/i;
+const nearUI={busy:false,status:'',raw:null,res:null,sel:{},done:0,errors:0,small:false,mode:'q1',km:null};
+function nearKm(lat1,lon1,lat2,lon2){
+  const r=Math.PI/180,a=Math.sin((lat2-lat1)*r/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin((lon2-lon1)*r/2)**2;
+  return 12742*Math.asin(Math.sqrt(a));
+}
+function nearEggs(it){
+  const p=it.product||{},name=p.product_name||'',m=/(\d+)\s*(?:œufs|oeufs|eggs)/i.exec(name)||/(?:œufs|oeufs|eggs)[^\d]{0,14}[x×]?\s*(\d+)/i.exec(name);
+  if(m&&[4,6,10,12,18,20,24,30].includes(+m[1]))return +m[1];
+  const q=Number(p.product_quantity),u=(p.product_quantity_unit||'').toLowerCase();
+  return Number.isInteger(q)&&[4,6,10,12,18,20,24,30].includes(q)&&(!u||u==='unit')?q:0;
+}
+// prix au kilo (ou au litre, ou à l'œuf) d'un relevé ; null si inutilisable (promotion, bio, quantité inconnue)
+function nearUnitPrice(it,egg){
+  const pr=Number(it.price);
+  if(!(pr>0)||it.price_is_discounted)return null;
+  const p=it.product||{};
+  if((p.labels_tags||[]).includes('en:organic'))return null;
+  if(egg){const n=nearEggs(it);return n?pr/n:null}
+  if(it.price_per==='KILOGRAM'||it.price_per==='LITER')return pr;
+  let q=Number(p.product_quantity),u=(p.product_quantity_unit||'g').toLowerCase();
+  if(!(q>0)){const m=/(\d+(?:[.,]\d+)?)\s*(kg|g|cl|ml|l)\b/i.exec(p.product_name||'');if(!m)return null;q=parseFloat(m[1].replace(',','.'));u=m[2].toLowerCase()}
+  const kg=u==='kg'||u==='l'?q:u==='cl'?q/100:q/1000;
+  return kg>0.01&&kg<30?pr/kg:null;
+}
+const nearQuantile=(a,q)=>{const s=[...a].sort((x,y)=>x-y);return s[Math.floor((s.length-1)*q)]};
+async function nearFetch(url){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),15000);
+  try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}
+}
+// analyse des relevés d'un produit selon les options : « bon prix » (1er quartile) ou le moins cher, converti au lot du catalogue
+function nearAnalyse(k,packKg,egg,items,here){
+  const cur=price(k),refUnit=egg?cur/12:cur/packKg,obs=[];
+  items.forEach(it=>{
+    const l=it.location||{};
+    if(!nearUI.small&&NEAR_SMALL.test(l.osm_name||''))return;
+    const u=nearUnitPrice(it,egg);
+    if(u==null||u<refUnit*0.35||u>refUnit*3.2)return;
+    obs.push({u,store:l.osm_name||'magasin',city:l.osm_address_city||'',km:l.osm_lat!=null?nearKm(here.lat,here.lon,l.osm_lat,l.osm_lon):null,date:it.date});
+  });
+  if(obs.length<3)return null;
+  const mul=egg?12:packKg,min=obs.reduce((a,o)=>o.u<a.u?o:a),unit=nearUI.mode==='min'?min.u:nearQuantile(obs.map(o=>o.u),0.25),sug=Math.round(unit*mul*100)/100;
+  return{k,cur,sug,n:obs.length,stores:new Set(obs.map(o=>o.store+o.city)).size,min:{p:Math.round(min.u*mul*100)/100,store:min.store,city:min.city,km:min.km,date:min.date},delta:cur>0?(sug-cur)/cur:0};
+}
+// recalcule les propositions à partir des relevés déjà reçus (changement d'option : pas de nouvelle requête)
+function nearCompute(resetSel){
+  const res=[];
+  Object.entries(nearUI.raw||{}).forEach(([k,r])=>{const a=nearAnalyse(k,r.packKg,r.egg,r.items,state.near);if(a)res.push(a)});
+  res.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  nearUI.res=res;
+  if(resetSel){nearUI.sel={};res.forEach(a=>{if(Math.abs(a.delta)>=0.03)nearUI.sel[a.k]=true})}
+  const n=state.near;
+  nearUI.status=res.length?`${res.length} produit${res.length>1?'s':''} sur ${NEAR.length} ont assez de relevés (${NEAR_DAYS/30|0} derniers mois, ${n.km} km autour de ${esc(n.label)}).`:`Pas assez de relevés dans ${n.km} km pour ces produits. Essaie un rayon plus grand${nearUI.small?'':' ou inclus les petits commerces'}.`;
+}
+async function nearSearch(){
+  const n=state.near;if(!n||nearUI.busy)return;
+  nearUI.busy=true;nearUI.res=null;nearUI.raw=null;nearUI.done=0;nearUI.errors=0;nearUI.status='Recherche des prix relevés près de '+esc(n.label);nearRefresh();
+  const since=addDays(todayKey(),-NEAR_DAYS),queue=NEAR.slice(),raw={};
+  async function worker(){
+    while(queue.length){
+      const [k,tag,packKg,egg]=queue.shift();
+      try{
+        const j=await nearFetch(`${NEAR_API}?lat=${n.lat}&lon=${n.lon}&radius_km=${n.km}&currency=EUR&date__gte=${since}&order_by=-date&size=100&product__categories_tags__contains=${encodeURIComponent(tag)}`);
+        raw[k]={packKg,egg:!!egg,items:j.items||[]};
+      }catch(e){nearUI.errors++}
+      nearUI.done++;nearRefresh();
+    }
+  }
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  nearUI.busy=false;
+  if(nearUI.errors>=NEAR.length-2){nearUI.status='Impossible de joindre Open Prices : vérifie ta connexion et réessaie.';nearUI.res=null}
+  else{nearUI.raw=raw;n.at=todayKey();save();nearCompute(true)}
+  nearRefresh();
+}
+// met à jour la carte sans repartir en haut de la page
+function nearRefresh(){const el=document.getElementById('near-card');if(el&&ui.tab==='shop')el.outerHTML=nearCard()}
+function nearCard(){
+  const n=state.near,km=n?n.km:(nearUI.km||10);
+  const loc=n?`<div class="small muted">Position utilisée : <b>${esc(n.label)}</b> (arrondie à 1 km)${n.at?' · dernière recherche le '+dShort(n.at):''}</div>`:'';
+  let h=`<section class="card" id="near-card"><h3>📍 Prix près de moi</h3>
+    <p class="small muted gap">L’appli compare tes prix aux prix relevés en magasin autour de toi (Open Prices, la base collaborative d’Open Food Facts) et te propose de les réajuster. Auchan ne permet pas de lire ses prix depuis une appli : ce sont les prix des commerces proches, toutes enseignes.</p>${loc}
+    <div class="grid2 gap"><label class="f">Rayon<select data-chg="nearkm">${NEAR_KM.map(v=>`<option value="${v}" ${km===v?'selected':''}>${v} km</option>`).join('')}</select></label>
+    <label class="f">Code postal<input id="near-zip" inputmode="numeric" maxlength="5" placeholder="94270" value=""></label></div>
+    <div class="btns"><button class="btn gold" data-act="near-gps" ${nearUI.busy?'disabled':''}>Utiliser ma position</button><button class="btn" data-act="near-zip" ${nearUI.busy?'disabled':''}>Chercher ce code postal</button>${n?`<button class="btn" data-act="near-go" ${nearUI.busy?'disabled':''}>Actualiser</button>`:''}</div>`;
+  if(nearUI.busy)h+=`<div class="gap">${bar(nearUI.done/NEAR.length,'blue')}<div class="small muted" style="margin-top:6px">${nearUI.status}… (${nearUI.done}/${NEAR.length})</div></div>`;
+  else if(nearUI.status)h+=`<p class="small gap" role="status">${nearUI.status}</p>`;
+  if(nearUI.raw){
+    h+=`<div class="grid2 gap"><label class="f">Prix à proposer<select data-chg="nearmode"><option value="q1" ${nearUI.mode==='q1'?'selected':''}>Bon prix</option><option value="min" ${nearUI.mode==='min'?'selected':''}>Moins cher</option></select></label>
+      <label class="f" style="display:flex;gap:8px;align-items:center;margin-top:18px"><input class="chk" style="width:22px;height:22px" type="checkbox" data-chg="nearsmall" ${nearUI.small?'checked':''}>Inclure les petits commerces</label></div>`;
+  }
+  if(nearUI.res&&nearUI.res.length){
+    const picked=Object.values(nearUI.sel).filter(Boolean).length;
+    const rows=nearUI.res.map(a=>{
+      const f=wkFood(a.k),up=a.delta>0,pc=Math.round(Math.abs(a.delta)*100);
+      return `<label class="shoprow" style="cursor:pointer"><input class="chk" type="checkbox" data-chg="nearsel" data-k="${a.k}" ${nearUI.sel[a.k]?'checked':''} aria-label="Appliquer ce prix"><div><b>${esc(f.pack)}</b><div class="small muted">${a.n} relevés dans ${a.stores} magasin${a.stores>1?'s':''} · le moins cher : ${euro(a.min.p)} (${esc(a.min.store)}${a.min.city?', '+esc(a.min.city):''}${a.min.km!=null?', '+fmtN(a.min.km,1)+' km':''})</div></div><div class="q" style="text-align:right">${euro(a.cur)} → <span class="${pc<3?'':up?'bad':'ok'}">${euro(a.sug)}</span><div class="small muted" style="font-weight:400">${pc<3?'≈ identique':(up?'+':'−')+pc+' %'}</div></div></label>`;
+    }).join('');
+    h+=`<div class="gap"><div class="rb"><h3>Prix proposés</h3><span class="small muted">${picked} coché${picked>1?'s':''}</span></div>
+      <p class="small muted">Prix converti au lot de ton catalogue, hors promotions et bio. Décoche ce qui ne te convient pas.</p>${rows}
+      <div class="btns"><button class="btn gold" data-act="near-apply">Appliquer les prix cochés</button><button class="btn" data-act="near-all">Tout cocher</button><button class="btn" data-act="near-none">Tout décocher</button></div></div>`;
+  }
+  h+=`<p class="small muted gap">Ta position (arrondie à 1 km) est envoyée à prices.openfoodfacts.org pour trouver les relevés proches, rien d’autre. Données © contributeurs Open Food Facts, licence ODbL. Les relevés viennent de personnes, pas des magasins : vérifie avant de t’y fier.</p></section>`;
+  return h;
+}
+function nearSetPlace(lat,lon,label){
+  const km=nearUI.km||(state.near?state.near.km:10);
+  state.near={lat:Math.round(lat*100)/100,lon:Math.round(lon*100)/100,km,label,at:state.near?state.near.at:null};
+  save();return nearSearch();
+}
+function nearGps(){
+  if(!navigator.geolocation){nearUI.status='La géolocalisation n’est pas disponible sur cet appareil : entre un code postal.';nearRefresh();return}
+  nearUI.status='Recherche de ta position…';nearUI.res=null;nearRefresh();
+  navigator.geolocation.getCurrentPosition(p=>{nearSetPlace(p.coords.latitude,p.coords.longitude,'ma position')},err=>{
+    nearUI.status=err&&err.code===1?'Localisation refusée : autorise-la dans Safari, ou entre un code postal.':'Position introuvable pour le moment : réessaie ou entre un code postal.';nearRefresh();
+  },{enableHighAccuracy:false,timeout:15000,maximumAge:600000});
+}
+async function nearZip(){
+  const z=((document.getElementById('near-zip')||{}).value||'').trim();
+  if(!/^\d{5}$/.test(z)){nearUI.status='Entre un code postal à 5 chiffres.';nearRefresh();return}
+  nearUI.status='Recherche du code postal…';nearRefresh();
+  try{
+    const j=await nearFetch('https://api-adresse.data.gouv.fr/search/?type=municipality&limit=1&q='+z);
+    const f=j.features&&j.features[0];
+    if(!f){nearUI.status='Code postal introuvable.';nearRefresh();return}
+    await nearSetPlace(f.geometry.coordinates[1],f.geometry.coordinates[0],f.properties.city+' ('+z+')');
+  }catch(e){nearUI.status='Impossible de joindre le service des adresses : vérifie ta connexion.';nearRefresh()}
+}
+function nearApply(){
+  const picks=(nearUI.res||[]).filter(a=>nearUI.sel[a.k]);
+  if(!picks.length){toast('Coche au moins un prix');return}
+  const cs=uiCycle().cs,before=purchasePlan(cs).total;
+  picks.forEach(a=>{state.prices[a.k]=a.sug});
+  bump();save();
+  const after=purchasePlan(cs).total,d=after-before;
+  nearCompute(true);
+  keepScroll(render);
+  toast(`${picks.length} prix mis à jour · courses du cycle ${Math.abs(d)<0.005?'inchangées':(d<0?'−':'+')+euro(Math.abs(d))} · il te reste ${euro(budgetLeft(cs).left)}`);
+}
+
 /* --- Courses et budget --- */
 function renderShop(){
   ensureStart();
@@ -1166,6 +1325,7 @@ function renderShop(){
     h+=`<section class="card"><div class="rb"><h3>${cat}</h3><span class="small muted">${euro(items.reduce((a,k)=>a+wk.buys[k].cost,0))}</span></div>${items.map(rowFor).join('')}</section>`;
   });
   if(stock.length)h+=`<section class="card"><h3>Déjà en stock</h3>${stock.map(rowFor).join('')}</section>`;
+  h+=nearCard();
   h+=`<section class="card"><details><summary>Prix des conditionnements</summary><p class="muted small gap">${PRICE_SRC} Ajuste un prix si tu le vois changer : le budget prévu se recalcule.</p>${Object.keys(FOODS).map(k=>`<label class="f" style="display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;margin-top:8px"><span>${FOODS[k].pack} · <span class="muted">${FOODS[k].packLabel}</span></span><input inputmode="decimal" data-chg="price" data-k="${k}" value="${fmtN(price(k),2).replace(/^(\d+)$/,'$1,00')}" aria-label="Prix de ${esc(FOODS[k].pack)}"></label>`).join('')}<div class="btns"><button class="btn sm" data-act="prices-reset">Remettre les prix Auchan Okabé</button></div></details></section>`;
   h+=`<div class="note">${PRICE_SRC} Huile, sel, poivre, moutarde, vinaigre, ail, citron et épices sont considérés comme fonds de placard. Les quantités de riz, pâtes, pommes de terre, semoule, pain et avoine sont ajustées à tes calories. Les petits suisses remplacent le skyr avec la même quantité de protéines. Pas de dinde hachée au drive Okabé : prends des escalopes de dinde à hacher.</div>`;
   return h;
@@ -1382,6 +1542,12 @@ view.addEventListener('click',e=>{
     case 'wkweek':ui.wk=addDays(ui.wk||wkDefaultSat(),7*Number(D.v));keepScroll(render);break;
     case 'wkreroll':{const s=ui.wk||wkDefaultSat();state.wksalt[s]=(state.wksalt[s]||0)+1;Object.keys(state.wkoff).filter(k=>k.startsWith(s+'|')).forEach(k=>delete state.wkoff[k]);bump();save();render();toast('Nouveau menu pour ce week-end');break}
     case 'wkmealtoggle':wkToggleMeal(D.k,!!state.wkoff[D.k]);break;
+    case 'near-gps':nearGps();break;
+    case 'near-zip':nearZip();break;
+    case 'near-go':nearSearch();break;
+    case 'near-apply':nearApply();break;
+    case 'near-all':nearUI.sel={};(nearUI.res||[]).forEach(a=>{nearUI.sel[a.k]=true});nearRefresh();break;
+    case 'near-none':nearUI.sel={};nearRefresh();break;
     case 'swap':openSwap(D.cs,+D.w,+D.d,+D.s);break;
     case 'cyc':{const c=uiCycle();ui.k=Math.max(0,c.k+Number(D.v));ui.week=0;render();break}
     case 'week':ui.week=+D.w;keepScroll(render);break;
@@ -1459,6 +1625,10 @@ view.addEventListener('change',e=>{
     case 'mealon':changePlan(k.split('|')[0],()=>{if(t.checked)delete state.offMeal[k];else state.offMeal[k]=true});break;
     case 'shop':if(t.checked)state.shop[k]=true;else delete state.shop[k];save();keepScroll(render);break;
     case 'wkmeal':wkToggleMeal(k,t.checked);break;
+    case 'nearkm':{const v=Number(t.value);if(NEAR_KM.includes(v)){nearUI.km=v;if(state.near){state.near.km=v;save();if(nearUI.raw)nearSearch()}}break}
+    case 'nearmode':nearUI.mode=t.value==='min'?'min':'q1';nearCompute(true);nearRefresh();break;
+    case 'nearsmall':nearUI.small=t.checked;nearCompute(true);nearRefresh();break;
+    case 'nearsel':if(t.checked)nearUI.sel[k]=true;else delete nearUI.sel[k];nearRefresh();break;
     case 'wkcomp':state.goals.wkComp=t.checked;bump();save();keepScroll(render);toast(t.checked?'Compensation en semaine activée':'Compensation en semaine désactivée');break;
     case 'wkshop':if(t.checked)state.wshop[k]=true;else delete state.wshop[k];save();keepScroll(render);break;
     case 'goal':{
