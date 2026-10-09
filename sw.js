@@ -1,5 +1,5 @@
-const CACHE='ma-routine-v3';
-const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+const CACHE='ma-routine-v5';
+const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./fonts/poppins-400.woff2','./fonts/poppins-500.woff2','./fonts/poppins-600.woff2'];
 const NETWORK_TIMEOUT=3500;
 // Ce service worker ne touche qu'aux caches « ma-routine- » : ARISE et ROAD TO GI partagent la même origine
 // (arise-detox.github.io) et gardent chacun leurs propres caches.
