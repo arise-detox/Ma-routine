@@ -1,7 +1,7 @@
-const CACHE='ma-routine-v6';
+const CACHE='ma-routine-v8';
 const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./fonts/poppins-400.woff2','./fonts/poppins-500.woff2','./fonts/poppins-600.woff2'];
 const NETWORK_TIMEOUT=3500;
-// Ce service worker ne touche qu'aux caches « ma-routine- » : ARISE et ROAD TO GI partagent la même origine
+// Ce service worker ne touche qu'aux caches « ma-routine- » : les autres applis du domaine partagent la même origine
 // (arise-detox.github.io) et gardent chacun leurs propres caches.
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('ma-routine-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

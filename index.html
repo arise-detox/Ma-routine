@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#c8a47e">
 <title>Ma Routine — Nutrition</title>
-<meta name="description" content="Menus et listes de courses du lundi au vendredi, calculés selon tes séances ROAD TO GI, ton poids et ton budget.">
+<meta name="description" content="Menus et listes de courses du lundi au vendredi, calculés selon ton programme de sport, ton poids et ton budget.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -482,7 +482,7 @@ Object.values(MEAL_BY_ID).forEach(m=>{
 /* ---------- État ---------- */
 const DEFAULT={
   goals:{budget:230,margin:15,kcal:2100,protein:180,water:2500,auto:true,wkBudget:40,wkComp:true},
-  profile:{sex:'',age:0,height:0,weight:0,target:0,goal:'auto',rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7},
+  profile:{sex:'',age:0,height:0,weight:0,target:0,goal:'auto',rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7,kgLight:3,prog:'rtg',days:null},
   start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},wksalt:{},wshop:{},wkoff:{},near:null,
   fx:{rain:false,level:'low',color:'white',v:2}
 };
@@ -494,6 +494,10 @@ function load(){
   if((saved.fx||{}).v!==2){s.fx={...base.fx,color:s.fx.color==='color'?'color':'white',level:s.fx.level||'low',rain:false,v:2}}
   ['prices','checks','extras','water','swaps','off','offMeal','shop','rerolls','wksalt','wshop','wkoff'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
   ['spend','weights'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+  // programme de sport : programme par défaut ou programme personnel (un type d'activité par jour de la semaine)
+  const pr=s.profile;if(pr.prog!=='custom')pr.prog='rtg';
+  if(pr.days&&typeof pr.days==='object'){for(let d=0;d<7;d++){const x=pr.days[d];pr.days[d]=x&&['rest','light','course','force'].includes(x.k)?{k:x.k,n:String(x.n||'').slice(0,40)}:{k:'rest',n:''}}}else pr.days=null;
+  if(pr.prog==='custom'&&!pr.days){pr.days={};['rest','force','course','force','course','force','course'].forEach((k,d)=>{pr.days[d]={k,n:''}})}
   if(!s.near||typeof s.near!=='object'||!(s.near.lat>=-90&&s.near.lat<=90&&s.near.lon>=-180&&s.near.lon<=180))s.near=null;
   else s.near.km=[5,10,20,30].includes(s.near.km)?s.near.km:10;
   return s;
@@ -505,8 +509,32 @@ let ver=0;const cycleCache=new Map(),mealCache=new Map(),planCache=new Map();
 function bump(){ver++;mealCache.clear();cycleCache.clear();wkCache.clear()}
 function resetCaches(){planCache.clear();bump()}
 
-/* Lien facultatif avec ROAD TO GI : même navigateur = même stockage ; sinon on colle sa sauvegarde. */
-function readRtg(){try{const raw=localStorage.getItem('roadToGI_v1');if(!raw)return null;const s=JSON.parse(raw);return s&&typeof s==='object'?s:null}catch(e){return null}}
+/* ---------- Accès réservé : le nom et les liens d'une application privée restent masqués tant que le code à 4 chiffres n'est pas saisi ---------- */
+// Ce n'est qu'un verrou d'affichage : il masque le nom dans l'appli, il ne protège pas un site public contre quelqu'un qui lit le code de la page.
+const PIN_HASH='6105557a4e7a306055a46f995b49566e0f71cffee1b8c11128633a6a96617615';
+const PIN_KEY='maRoutine_access';
+let unlocked=false;try{unlocked=localStorage.getItem(PIN_KEY)===PIN_HASH}catch(e){}
+const RTGN=()=>unlocked?['ROAD','TO','GI'].join(' '):'████ ██ ██';
+const RTG_URL='../'+['road','to','gi'].join('-')+'/';
+let pinFails=0,pinLockUntil=0;
+async function pinHash(pin){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ma-routine|'+pin));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function pinTry(){
+  const st=document.getElementById('pinStatus'),v=((document.getElementById('pinInput')||{}).value||'').trim();
+  if(Date.now()<pinLockUntil){st.textContent='Trop d’essais : réessaie dans '+Math.ceil((pinLockUntil-Date.now())/1000)+' s.';return}
+  if(!/^\d{4}$/.test(v)){st.textContent='Entre le code à 4 chiffres.';return}
+  let h;try{h=await pinHash(v)}catch(e){st.textContent='Vérification impossible sur une page non sécurisée (https requis).';return}
+  if(h===PIN_HASH){pinFails=0;try{localStorage.setItem(PIN_KEY,PIN_HASH)}catch(e){}unlocked=true;resetCaches();render();toast('Accès débloqué')}
+  else{pinFails++;document.getElementById('pinInput').value='';if(pinFails>=5){pinLockUntil=Date.now()+30000;pinFails=0;st.textContent='Code incorrect. Trop d’essais : attends 30 s.'}else st.textContent='Code incorrect.'}
+}
+function pinLock(){try{localStorage.removeItem(PIN_KEY)}catch(e){}unlocked=false;if(state.profile.prog==='rtg'){}resetCaches();render();toast('Accès verrouillé')}
+function accessCard(){
+  return unlocked
+    ? `<section class="card"><h3>🔓 Accès réservé</h3><p class="small muted gap">Débloqué sur cet appareil : ${RTGN()} est visible dans l’appli.</p><div class="btns"><button class="btn" data-act="pin-lock">Verrouiller</button></div></section>`
+    : `<section class="card"><h3>🔒 Accès réservé</h3><p class="small muted gap">Une fonction privée est masquée : <b>${RTGN()}</b>. Entre le code à 4 chiffres pour la débloquer sur cet appareil.</p>
+      <div class="grid2 gap" style="align-items:end"><label class="f">Code<input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••"></label><button class="btn gold" data-act="pin-try">Débloquer</button></div><p id="pinStatus" class="small muted gap" role="status"></p></section>`;
+}
+/* Lien facultatif avec l'application privée : même navigateur = même stockage ; sinon on colle sa sauvegarde. */
+function readRtg(){if(!unlocked)return null;try{const raw=localStorage.getItem(['road','To','GI'].join('')+'_v1');if(!raw)return null;const s=JSON.parse(raw);return s&&typeof s==='object'?s:null}catch(e){return null}}
 function applyRtg(s){
   const got=[];
   if(!s||typeof s!=='object')return got;
@@ -521,7 +549,7 @@ function applyRtg(s){
 }
 function ensureStart(){
   if(Number.isFinite(dateNumber(state.start)))return;
-  const r=readRtg();
+  const r=state.profile.prog==='custom'?null:readRtg();
   if(r&&Number.isFinite(dateNumber(r.startDate))){state.start=mondayOf(r.startDate)}
   else{const t=todayKey(),d=dow(t);state.start=(d===6||d===0)?addDays(mondayOf(t),7):mondayOf(t)}
   save();
@@ -544,9 +572,18 @@ function weightTrend(today){
   return sxx>0?{perWeek:sxy/sxx*7,n,days:xs[xs.length-1]}:null;
 }
 
-/* ---------- Dépense énergétique : tes séances ROAD TO GI + poids actuel / poids cible ---------- */
-// Planning ROAD TO GI : functional lundi, mercredi, vendredi ; course + abdos mardi, jeudi (et samedi) ; dimanche repos.
-const ACT={0:{k:'rest',n:'Repos'},1:{k:'force',n:'Functional training · pecs et dos'},2:{k:'course',n:'Course + abdos'},3:{k:'force',n:'Functional training · jambes et épaules'},4:{k:'course',n:'Course + abdos'},5:{k:'force',n:'Functional training · pecs et dos'},6:{k:'course',n:'Course + circuit'}};
+/* ---------- Dépense énergétique : ton programme de sport (par défaut ou personnel) + poids actuel / poids cible ---------- */
+// Planning par défaut : functional lundi, mercredi, vendredi ; course + abdos mardi, jeudi (et samedi) ; dimanche repos.
+const RTG_ACT={0:{k:'rest',n:'Repos'},1:{k:'force',n:'Functional training · pecs et dos'},2:{k:'course',n:'Course + abdos'},3:{k:'force',n:'Functional training · jambes et épaules'},4:{k:'course',n:'Course + abdos'},5:{k:'force',n:'Functional training · pecs et dos'},6:{k:'course',n:'Course + circuit'}};
+// types d'activité d'un jour : repos, activité légère (marche, mobilité), course / cardio, musculation / renforcement
+const KIND_LABEL={rest:'Repos',light:'Activité légère',course:'Course / cardio',force:'Musculation / renforcement'};
+const KIND_DAY={rest:'Jour de repos',light:'Jour d’activité légère',course:'Jour de course',force:'Jour de force'};
+const KIND_OF={rest:'de repos',light:'d’activité légère',course:'de course',force:'de force'};
+const KIND_ICO={rest:'😴',light:'🚶',course:'🏃',force:'💪'};
+const KIND_TIP={force:'Jour de force : déjeune 2 à 3 h avant la séance et garde un repas riche en protéines après, pour la récupération.',course:'Jour de course : privilégie les féculents (riz, pâtes, pommes de terre) au repas précédent et bois régulièrement.',light:'Jour d’activité légère : mange à ta faim, bois régulièrement et garde des protéines à chaque repas.',rest:'Jour de repos : mange à ta faim sans compenser, et garde des protéines à chaque repas : c’est là que le muscle se répare.'};
+const ACT={};
+function applyProgram(){const p=state.profile;for(let d=0;d<7;d++){const c=p.prog==='custom'&&p.days&&p.days[d];ACT[d]=c?{k:c.k,n:c.n||KIND_LABEL[c.k]}:RTG_ACT[d]}}
+applyProgram();
 const DAY_NAMES=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const actOf=date=>ACT[dow(date)];
 function profileReady(){
@@ -558,12 +595,12 @@ function energy(adjust){
   if(!profileReady())return{ready:false};
   const p=state.profile,w=p.weight;if(adjust===undefined)adjust=p.adjust;
   const bmr=10*w+6.25*p.height-5*p.age+(p.sex==='H'?5:-161),base=bmr*p.pal;
-  const tdee={force:base+p.kgForce*w,course:base+p.kgCourse*w,rest:base};
+  const tdee={force:base+p.kgForce*w,course:base+p.kgCourse*w,light:base+(p.kgLight>0?p.kgLight:3)*w,rest:base};
   // objectif choisi (déficit, maintien, prise de muscle) ; « auto » le déduit de l'écart entre ton poids et ton poids cible
   const diff=p.target>0?w-p.target:0,autoMode=diff>0.5?'cut':diff<-0.5?'bulk':'maint',mode=['cut','maint','bulk'].includes(p.goal)?p.goal:autoMode;
   const rate=mode==='maint'?0:p.rate,floor=Math.max(bmr,p.sex==='H'?1500:1200);
   const targets={};let capped=false;
-  ['force','course'].forEach(k=>{
+  ['force','course','light','rest'].forEach(k=>{
     // l'écart hebdomadaire voulu est réparti sur les 5 jours planifiés (le week-end n'est pas compté)
     const want=tdee[k]+(mode==='cut'?-1:mode==='bulk'?1:0)*rate*7700/5+adjust;
     let t=want;
@@ -575,11 +612,11 @@ function energy(adjust){
 }
 const auto=()=>state.goals.auto&&profileReady();
 // objectif du jour : calories du profil, moins la part du cheat meal du week-end à compenser (voir wkApplyComp)
-function targetKcal(date){const d=dow(date);if(auto()){const e=energy(),k=ACT[d]&&ACT[d].k==='course'?'course':'force';return Math.round(wkApplyComp(date,e,e.targets[k],e.tdee[k])/10)*10}return state.goals.kcal}
+function targetKcal(date){const d=dow(date);if(auto()){const e=energy(),k=ACT[d].k;return Math.round(wkApplyComp(date,e,e.targets[k],e.tdee[k])/10)*10}return state.goals.kcal}
 function targetProtein(){return auto()?energy().protein:state.goals.protein}
 const rateOptions=mode=>mode==='bulk'?[[0.1,'Doux · +0,1 kg/sem'],[0.2,'Modéré · +0,2 kg/sem'],[0.3,'Rapide · +0,3 kg/sem']]:[[0.25,'Doux · −0,25 kg/sem'],[0.5,'Modéré · −0,5 kg/sem'],[0.75,'Rapide · −0,75 kg/sem']];
 
-/* ---------- Cycles de 4 semaines (lundi-vendredi) alignés sur les 4 semaines d'un programme ROAD TO GI ---------- */
+/* ---------- Cycles de 4 semaines (lundi-vendredi) alignés sur les 4 semaines d'un programme ---------- */
 function monthSeed(id){let s=0;for(const c of id)s=(s*31+c.charCodeAt(0))>>>0;return s}
 function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 function shuffled(arr,rand){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -856,7 +893,7 @@ function renderToday(){
   const cs=cycleStart(p.k),di=d-1,act=ACT[d],plan=dayPlan(cs,p.week,di),goalK=plan.fullTarget,goalP=targetProtein();
   let h=profileBanner();
   h+=`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>${esc(act.n)}</h2>
-    <div style="margin-top:6px">${chip('Cycle '+(p.k+1)+' · semaine '+(p.week+1)+'/4')}${chip(act.k==='force'?'Jour de force':'Jour de course','plain')}</div>
+    <div style="margin-top:6px">${chip('Cycle '+(p.k+1)+' · semaine '+(p.week+1)+'/4')}${chip(KIND_DAY[act.k],'plain')}</div>
     <div class="small muted gap">Objectif du jour : <b>${kc(goalK)} kcal</b> · <b>${kc(goalP)} g</b> de protéines${auto()?' (calculé pour ton profil)':''}${auto()&&wkCompKcal(today)>0?`<br>dont −${kc(wkCompKcal(today))} kcal pour le cheat meal de ce week-end  <button type="button" class="btn sm" data-act="goto" data-tab="cheat">voir</button>`:''}</div></section>`;
   if(!plan.any){
     return h+`<section class="card"><h3>Jour non planifié</h3><p class="muted gap">Tu as retiré ce jour (ou tous ses repas) : pas de repas prévu, rien dans la liste de courses, et ton budget en tient compte.</p><div class="btns"><button class="btn gold" data-act="dayon" data-k="${cs}|${p.week}|${di}">Replanifier ce jour</button><button class="btn" data-act="goto" data-tab="shop">Courses</button></div></section>`+goalCards(today);
@@ -881,7 +918,7 @@ function renderToday(){
   if(ex.length)h+=`<div class="gap">${ex.map((x,i)=>`<div class="exrow" style="grid-template-columns:1fr auto auto"><span>${esc(x.n)}</span><span class="d">${kc(x.k)} kcal · ${kc(x.p)} g</span><button type="button" data-act="extra-del" data-i="${i}" aria-label="Retirer">✕</button></div>`).join('')}</div>`;
   h+=`<details class="gap"><summary>Ajout libre</summary><div class="grid3 gap"><label class="f">Nom<input id="xn" type="text" placeholder="Barre, fruit…"></label><label class="f">kcal<input id="xk" inputmode="numeric" placeholder="200"></label><label class="f">Prot. (g)<input id="xp" inputmode="numeric" placeholder="20"></label></div><button class="btn sm gold gap" data-act="extra-add">Ajouter</button></details></section>`;
   h+=goalCards(today);
-  h+=`<section class="card"><div class="eyebrow">Conseil</div><p class="gap">${esc(act.k==='force'?'Jour de force : déjeune 2 à 3 h avant la séance et garde un repas riche en protéines après, pour la récupération.':'Jour de course : privilégie les féculents (riz, pâtes, pommes de terre) au repas précédent et bois régulièrement.')} ${esc(tipOfDay(today))}</p></section>`;
+  h+=`<section class="card"><div class="eyebrow">Conseil</div><p class="gap">${esc(KIND_TIP[act.k])} ${esc(tipOfDay(today))}</p></section>`;
   return h;
 }
 function goalCards(today){
@@ -947,7 +984,7 @@ function renderMenus(){
   for(let d=0;d<5;d++){
     const P=dayPlan(cs,c.w,d),act=actOf(P.date);
     h+=`<section class="card ${P.date===today?'hero':''} ${P.any?'':'off'}"><div class="rb"><h2>${dLong(P.date)}</h2>${P.date===today?chip("Aujourd’hui",'good'):''}</div>
-      <div class="small muted" style="margin:3px 0 4px">${act.k==='force'?'💪':'🏃'} ${esc(act.n)}</div>`;
+      <div class="small muted" style="margin:3px 0 4px">${KIND_ICO[act.k]} ${esc(act.n)}</div>`;
     if(!P.any){h+=`<p class="muted small">Jour non planifié : pas de repas ni de courses.</p><div class="btns"><button class="btn sm" data-act="dayon" data-k="${cs}|${c.w}|${d}">Replanifier</button></div></section>`;continue}
     nOn++;wk.kcal+=P.tot.kcal;wk.prot+=P.tot.prot;wk.cost+=P.tot.cost;
     P.meals.forEach((m,s)=>{h+=mealRow(m,s,P.date,cs,c.w,d,'plan')});
@@ -1046,7 +1083,7 @@ function wkApplyComp(date,E,base,tdee){
   return Math.min(base,Math.max(base-S/5,lim));
 }
 // calories retirées ce jour-là pour compenser le week-end
-const wkCompKcal=date=>{const E=energy();if(!E.ready)return 0;const k=ACT[dow(date)].k==='course'?'course':'force';return Math.round((E.targets[k]-wkApplyComp(date,E,E.targets[k],E.tdee[k]))/10)*10};
+const wkCompKcal=date=>{const E=energy();if(!E.ready)return 0;const k=ACT[dow(date)].k;return Math.round((E.targets[k]-wkApplyComp(date,E,E.targets[k],E.tdee[k]))/10)*10};
 // argent économisé sur les week-ends passés ou en cours (budget non dépensé et repas retirés)
 function wkSavings(){
   const t=todayKey(),first=addDays(state.start,5),last=addDays(t,-((dow(t)+1)%7));
@@ -1098,7 +1135,7 @@ function renderCheat(){
   if(E.ready){
     const S=wkSurplus(sat),mon=addDays(sat,-5);
     let applied=0,days=0;
-    for(let d=0;d<5;d++){const date=addDays(mon,d),k=ACT[dow(date)].k==='course'?'course':'force';applied+=E.targets[k]-wkApplyComp(date,E,E.targets[k],E.tdee[k]);days++}
+    for(let d=0;d<5;d++){const date=addDays(mon,d),k=ACT[dow(date)].k;applied+=E.targets[k]-wkApplyComp(date,E,E.targets[k],E.tdee[k]);days++}
     const per=applied/days,short=state.goals.wkComp&&S>0?Math.max(0,S-applied):0;
     h+=`<section class="card"><h3>Bilan calorique de la semaine</h3>
       <div class="kv"><span>Ces repas du week-end</span><span class="${S>0?'bad':'ok'}">${sgn(S,0)} kcal</span><span>Par rapport à ta dépense estimée</span><span>${S>=0?'au-dessus':'en dessous'}</span>${S>0&&state.goals.wkComp&&per>=5?`<span>Compensé du lundi au vendredi (${dShort(mon)} – ${dShort(addDays(mon,4))})</span><span>−${kc(per)} kcal par jour</span>`:''}${S>0&&(state.goals.wkComp?short:S)>1?`<span>Effet non compensé sur ton poids</span><span>${sgn((state.goals.wkComp?short:S)/7700,2)} kg</span>`:''}</div>
@@ -1359,7 +1396,7 @@ function renderGoal(){
   let h=profileBanner(true);
   const GOALS=[['auto','Automatique · selon mon poids cible','Déduit de l’écart entre ton poids actuel et ton poids cible.'],['cut','Déficit · perdre du poids','Déficit calorique réparti sur les jours planifiés, jamais plus de 25 % sous ta dépense.'],['maint','Maintien · garder mon poids','Calories égales à ta dépense : le poids reste stable. Le poids cible est facultatif.'],['bulk','Prise de muscle · petit surplus','Surplus modéré (+0,1 à +0,3 kg par semaine) et 2 g de protéines par kg, pour prendre du muscle en limitant le gras.']];
   const cur=GOALS.find(g=>g[0]===(p.goal||'auto'))||GOALS[0];
-  h+=`<section class="card hero"><h2>Mon objectif</h2><p class="muted small gap">L’appli calcule tes calories de chaque jour d’après tes séances ROAD TO GI, ton poids actuel et ton objectif. Choisis ci-dessous : déficit, maintien ou prise de muscle. Tout reste modifiable.</p>
+  h+=`<section class="card hero"><h2>Mon objectif</h2><p class="muted small gap">L’appli calcule tes calories de chaque jour d’après ${p.prog==='custom'?'ton programme de sport':(unlocked?'tes séances '+RTGN():'ton programme de sport')}, ton poids actuel et ton objectif. Choisis ci-dessous : déficit, maintien ou prise de muscle. Tout reste modifiable.</p>
     <label class="f gap">Mon objectif de poids<select data-chg="prof" data-k="goal">${GOALS.map(g=>`<option value="${g[0]}" ${g[0]===cur[0]?'selected':''}>${g[1]}</option>`).join('')}</select></label>
     <p class="small muted gap">${esc(cur[2])}</p></section>
   <section class="card" id="budget-card"><h3>💰 Mon budget</h3><p class="small muted">Modifie-le quand tu veux : les courses, les menus les moins chers et les restes se recalculent tout de suite.</p><div class="grid2 gap">
@@ -1379,9 +1416,12 @@ function renderGoal(){
   }
   h+=`</section>`;
   if(!E.ready){
-    return h+`<div class="note">Complète tous les champs du profil (sexe, âge, taille, poids actuel, poids cible) : les calories et la durée estimée apparaîtront ici. Le poids et la date de départ peuvent aussi être repris de ROAD TO GI dans les réglages.</div>`+weightCard(today,lw);
+    return h+`<div class="note">Complète tous les champs du profil (sexe, âge, taille, poids actuel, poids cible) : les calories et la durée estimée apparaîtront ici. ${p.prog==='custom'||!unlocked?'':'Le poids et la date de départ peuvent aussi être repris de '+RTGN()+' dans les réglages.'}</div>`+weightCard(today,lw);
   }
   const wk=plannedWeekly(c.cs,E),nDays=cycleDays(c.cs),loss=-wk;
+  // types de jours du lundi au vendredi (un grand chiffre par type)
+  const used=[];[1,2,3,4,5].forEach(d=>{const k=ACT[d].k;let u=used.find(x=>x.k===k);if(!u)used.push(u={k,days:[]});u.days.push(['dim','lun','mar','mer','jeu','ven','sam'][d])});
+  const tdAll=used.map(u=>Math.round(E.tdee[u.k])),tdLo=Math.min(...tdAll),tdHi=Math.max(...tdAll);
   const modeName=E.mode==='cut'?'Déficit · perte de poids':E.mode==='bulk'?'Prise de muscle':'Maintien';
   let verdict='',vshort='',vcls='';
   if(E.mode==='cut'){
@@ -1397,8 +1437,8 @@ function renderGoal(){
   const rightWay=(E.mode==='cut'&&wk<0&&E.diff>0)||(E.mode==='bulk'&&wk>0&&E.diff<0),eff=rightWay?Math.abs(wk):0,weeks=eff>0.02?Math.abs(E.diff)/eff:null;
   const dateGoal=weeks?addDays(today,Math.round(weeks*7)):null;
   h+=`<section class="card hero"><div class="rb"><h3>${modeName}</h3>${chip(vshort,vcls)}</div>
-    <div class="grid2 gap"><div><div class="big">${kc(E.targets.force)}</div><div class="small muted">kcal les jours de force<br>(lun · mer · ven)</div></div><div><div class="big">${kc(E.targets.course)}</div><div class="small muted">kcal les jours de course<br>(mar · jeu)</div></div></div>
-    <div class="kv"><span>Protéines</span><span>${kc(E.protein)} g / jour</span><span>Dépense estimée</span><span>${kc(E.tdee.force)} à ${kc(E.tdee.course)} kcal</span><span>Écart par jour planifié</span><span>${sgn(E.targets.force-E.tdee.force,0)} kcal</span>${E.mode==='maint'?'':`<span>Rythme estimé (${nDays} jours planifiés)</span><span>${sgn(wk,2)} kg / semaine</span><span>Poids cible atteint</span><span>${dateGoal?`vers le ${dShort(dateGoal)} (${Math.ceil(weeks)} sem.)`:'—'}</span>`}</div>
+    <div class="grid2 gap">${used.map(u=>`<div><div class="big">${kc(E.targets[u.k])}</div><div class="small muted">kcal les jours ${KIND_OF[u.k]}<br>(${u.days.join(' · ')})</div></div>`).join('')}</div>
+    <div class="kv"><span>Protéines</span><span>${kc(E.protein)} g / jour</span><span>Dépense estimée</span><span>${tdLo===tdHi?kc(tdLo):kc(tdLo)+' à '+kc(tdHi)} kcal</span><span>Écart par jour planifié</span><span>${sgn(E.targets[used[0].k]-E.tdee[used[0].k],0)} kcal</span>${E.mode==='maint'?'':`<span>Rythme estimé (${nDays} jours planifiés)</span><span>${sgn(wk,2)} kg / semaine</span><span>Poids cible atteint</span><span>${dateGoal?`vers le ${dShort(dateGoal)} (${Math.ceil(weeks)} sem.)`:'—'}</span>`}</div>
     <p class="gap small">${esc(verdict)}</p>${E.capped?`<div class="warnbox">Le déficit demandé a été limité par sécurité (jamais sous ${kc(E.floor)} kcal ni plus de 25 % sous ta dépense).</div>`:''}
     <p class="small muted gap">Le week-end compte : les repas cheat meal gardés au menu sont comparés à ta dépense (onglet Week-end) et, si la compensation est active, leur surplus est retiré de tes repas du lundi au vendredi pour ne pas annuler ton objectif. Moins tu planifies de jours, plus l’objectif est long à atteindre.</p></section>`;
   // ajustement d'après la courbe réelle
@@ -1415,12 +1455,17 @@ function renderGoal(){
     if(p.adjust)h+=`<p class="small muted gap">Ajustement en cours : ${sgn(p.adjust,0)} kcal par jour. <button class="btn sm" data-act="adjust" data-v="0">Annuler</button></p>`;
     h+=`</section>`;
   }
-  h+=`<section class="card"><h3>Mes séances ROAD TO GI</h3><p class="muted small">Dépense d’énergie estimée par jour (métabolisme + vie courante + séance).</p>
-    ${[1,2,3,4,5].map(d=>{const a=ACT[d],t=a.k==='force'?E.tdee.force:E.tdee.course;return `<div class="act ${dow(today)===d?'today':''}"><span>${DAY_NAMES[d]}</span><span>${esc(a.n)}</span><b>${kc(t)} kcal</b></div>`}).join('')}
-    <div class="act"><span>Samedi</span><span>Course + circuit <span class="d">(non planifié)</span></span><b>—</b></div><div class="act"><span>Dimanche</span><span>Repos <span class="d">(non planifié)</span></span><b>—</b></div>
-    <div class="btns"><a class="btn" href="../road-to-gi/">Ouvrir ROAD TO GI</a></div></section>`;
+  const custom=p.prog==='custom';
+  const dayRow=d=>{const a=ACT[d],t=E.tdee[a.k];return custom
+    ? `<div class="act" style="grid-template-columns:70px 1fr;align-items:start"><span>${DAY_NAMES[d].slice(0,3)}.<br><b class="small" style="font-weight:500">${kc(t)} kcal</b></span><div style="display:grid;gap:6px"><select data-chg="dkind" data-k="${d}" aria-label="Activité du ${DAY_NAMES[d].toLowerCase()}">${Object.keys(KIND_LABEL).map(k=>`<option value="${k}" ${a.k===k?'selected':''}>${KIND_LABEL[k]}</option>`).join('')}</select><input data-chg="dname" data-k="${d}" value="${esc(state.profile.days[d].n)}" maxlength="40" placeholder="Nom de la séance (facultatif)" aria-label="Nom de la séance du ${DAY_NAMES[d].toLowerCase()}"></div></div>`
+    : `<div class="act ${dow(today)===d?'today':''}"><span>${DAY_NAMES[d]}</span><span>${esc(a.n)}${d===0||d===6?' <span class="d">(week-end)</span>':''}</span><b>${kc(t)} kcal</b></div>`};
+  h+=`<section class="card"><h3>${custom||!unlocked?(custom?'Mon programme de sport':'Mon programme (par défaut)'):'Mes séances '+RTGN()}</h3>
+    <label class="f gap">Programme de sport<select data-chg="prog"><option value="rtg" ${custom?'':'selected'}>${unlocked?RTGN()+' (par défaut)':'Programme par défaut'}</option><option value="custom" ${custom?'selected':''}>Mon propre programme</option></select></label>
+    <p class="muted small gap">${custom?'Choisis pour chaque jour ce que tu fais : repos, activité légère (marche, mobilité), course / cardio, ou musculation / renforcement. Les calories de chaque jour en tiennent compte (réglable dans les réglages, « Dépense des séances »). Les menus restent du lundi au vendredi.':'Dépense d’énergie estimée par jour (métabolisme + vie courante + séance). '+(unlocked?'Tu n’utilises pas '+RTGN()+' ? ':'Tu as ton propre programme ? ')+'Choisis « Mon propre programme ».'}</p>
+    ${(custom?[1,2,3,4,5,6,0]:[1,2,3,4,5,6,0]).map(dayRow).join('')}
+    ${custom||!unlocked?'':'<div class="btns"><a class="btn" href="'+RTG_URL+'">Ouvrir '+RTGN()+'</a></div>'}</section>`;
   h+=weightCard(today,lw);
-  h+=`<section class="card"><details><summary>Comment c’est calculé</summary><div class="small muted gap">Métabolisme de base (Mifflin-St Jeor) : ${kc(E.bmr)} kcal. × ${fmtN(p.pal,2)} pour ta vie courante = ${kc(E.base)} kcal, plus la séance : ${fmtN(p.kgForce,1)} kcal par kg les jours de force et ${fmtN(p.kgCourse,1)} kcal par kg les jours de course (estimation moyenne).<br><br>Un kilo de graisse correspond à environ 7 700 kcal. L’écart voulu par semaine est réparti sur les 5 jours planifiés. Protéines : ${fmtN(p.protKg,1)} g par kg.<br><br>Ce sont des estimations : ta courbe de poids réelle sert à corriger le tir. Pas de régime en dessous de ${kc(E.floor)} kcal.</div></details></section>`;
+  h+=`<section class="card"><details><summary>Comment c’est calculé</summary><div class="small muted gap">Métabolisme de base (Mifflin-St Jeor) : ${kc(E.bmr)} kcal. × ${fmtN(p.pal,2)} pour ta vie courante = ${kc(E.base)} kcal, plus la séance : ${fmtN(p.kgForce,1)} kcal par kg les jours de force, ${fmtN(p.kgCourse,1)} les jours de course et ${fmtN(p.kgLight>0?p.kgLight:3,1)} les jours d’activité légère (estimations moyennes).<br><br>Un kilo de graisse correspond à environ 7 700 kcal. L’écart voulu par semaine est réparti sur les 5 jours planifiés. Protéines : ${fmtN(p.protKg,1)} g par kg.<br><br>Ce sont des estimations : ta courbe de poids réelle sert à corriger le tir. Pas de régime en dessous de ${kc(E.floor)} kcal.</div></details></section>`;
   return h;
 }
 function weightCard(today,lw){
@@ -1473,13 +1518,15 @@ function renderSettings(){
   <section class="card"><details><summary>Prix du week-end (cheat meal)</summary><p class="muted small gap">${WK_PRICE_SRC} Ajuste un prix si tu le vois changer : les courses et le budget du week-end se recalculent.</p>${Object.keys(WFOODS).map(k=>`<label class="f" style="display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;margin-top:8px"><span>${WFOODS[k].pack} · <span class="muted">${WFOODS[k].packLabel}</span></span><input inputmode="decimal" data-chg="price" data-k="${k}" value="${fmtN(price(k),2).replace(/^(\d+)$/,'$1,00')}" aria-label="Prix de ${esc(WFOODS[k].pack)}"></label>`).join('')}<div class="btns"><button class="btn sm" data-act="prices-reset">Remettre les prix Auchan Okabé</button></div></details></section>
   <section class="card"><h3>Dépense des séances</h3><p class="small muted">Calories brûlées par kg de poids de corps pendant une séance (réglage avancé).</p><div class="grid2 gap">
     <label class="f">Jour de force (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgForce" value="${fmtN(state.profile.kgForce,1)}"></label>
-    <label class="f">Jour de course (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgCourse" value="${fmtN(state.profile.kgCourse,1)}"></label></div></section>
+    <label class="f">Jour de course (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgCourse" value="${fmtN(state.profile.kgCourse,1)}"></label>
+    <label class="f">Activité légère (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgLight" value="${fmtN(state.profile.kgLight>0?state.profile.kgLight:3,1)}"></label></div></section>
   <section class="card"><h3>Début de ma préparation</h3><label class="f gap">Lundi de départ (semaine 1 du cycle 1)<input type="date" data-chg="start" value="${state.start}"></label>
-    <p class="small muted gap">Les cycles de menus avancent par blocs de 4 semaines à partir de cette date. Mets la même date que dans ROAD TO GI.</p></section>
-  <section class="card"><h3>Reprendre mes données de ROAD TO GI</h3>
-    <p class="small muted">Reprend la date de départ et ton poids. Si les deux applis sont ouvertes dans le même navigateur, le bouton suffit ; sinon colle la sauvegarde de ROAD TO GI (Profil &gt; Sauvegarde &gt; Copier).</p>
-    <div class="btns"><button class="btn gold" data-act="rtg-import" ${r?'':'disabled style="opacity:.5"'}>Importer depuis ce navigateur</button><a class="btn" href="../road-to-gi/">Ouvrir ROAD TO GI</a></div>
-    <textarea id="rtgText" class="gap" spellcheck="false" placeholder="Colle ici la sauvegarde ROAD TO GI"></textarea><div class="btns"><button class="btn" data-act="rtg-paste">Importer le texte collé</button></div><p id="rtgStatus" class="small muted gap" role="status"></p></section>
+    <p class="small muted gap">Les cycles de menus avancent par blocs de 4 semaines à partir de cette date. ${state.profile.prog==='custom'||!unlocked?'':'Mets la même date que dans '+RTGN()+'.'}</p></section>
+  ${state.profile.prog==='custom'||!unlocked?'':`<section class="card"><h3>Reprendre mes données de ${RTGN()}</h3>
+    <p class="small muted">Reprend la date de départ et ton poids. Si les deux applis sont ouvertes dans le même navigateur, le bouton suffit ; sinon colle la sauvegarde de ${RTGN()} (Profil &gt; Sauvegarde &gt; Copier).</p>
+    <div class="btns"><button class="btn gold" data-act="rtg-import" ${r?'':'disabled style="opacity:.5"'}>Importer depuis ce navigateur</button><a class="btn" href="${RTG_URL}">Ouvrir ${RTGN()}</a></div>
+    <textarea id="rtgText" class="gap" spellcheck="false" placeholder="Colle ici la sauvegarde ${RTGN()}"></textarea><div class="btns"><button class="btn" data-act="rtg-paste">Importer le texte collé</button></div><p id="rtgStatus" class="small muted gap" role="status"></p></section>`}
+  ${accessCard()}
   <section class="card"><h3>Menus</h3><p class="small muted">Remplace les menus du cycle affiché par de nouveaux, avec au moins 70 % de repas différents. Tes remplacements manuels de ce cycle sont effacés.</p><div class="btns"><button class="btn" data-act="reroll">Nouveau cycle de menus</button></div></section>
   <section class="card"><h3>Ambiance</h3>
     <label class="small muted gap" style="display:flex;gap:8px;align-items:center"><input class="chk" style="width:22px;height:22px" type="checkbox" data-chg="fxrain" ${state.fx.rain?'checked':''}>Pluie de code en arrière-plan (style Matrix)</label>
@@ -1542,6 +1589,8 @@ view.addEventListener('click',e=>{
     case 'wkweek':ui.wk=addDays(ui.wk||wkDefaultSat(),7*Number(D.v));keepScroll(render);break;
     case 'wkreroll':{const s=ui.wk||wkDefaultSat();state.wksalt[s]=(state.wksalt[s]||0)+1;Object.keys(state.wkoff).filter(k=>k.startsWith(s+'|')).forEach(k=>delete state.wkoff[k]);bump();save();render();toast('Nouveau menu pour ce week-end');break}
     case 'wkmealtoggle':wkToggleMeal(D.k,!!state.wkoff[D.k]);break;
+    case 'pin-try':pinTry();break;
+    case 'pin-lock':pinLock();break;
     case 'near-gps':nearGps();break;
     case 'near-zip':nearZip();break;
     case 'near-go':nearSearch();break;
@@ -1589,8 +1638,8 @@ view.addEventListener('click',e=>{
     case 'rtg-paste':{
       const st=document.getElementById('rtgStatus');let data;
       try{data=JSON.parse(document.getElementById('rtgText').value)}catch(err){st.textContent='Texte illisible : colle la sauvegarde complète.';break}
-      const s=data&&data.app==='road-to-gi'&&data.state;
-      if(!s||typeof s!=='object'){st.textContent='Ce texte n’est pas une sauvegarde ROAD TO GI.';break}
+      const s=data&&data.app===['road','to','gi'].join('-')&&data.state;
+      if(!s||typeof s!=='object'){st.textContent='Ce texte n’est pas une sauvegarde '+RTGN()+'.';break}
       const got=applyRtg(s);save();st.textContent=got.length?'Repris : '+got.join(', ')+'.':'Rien à reprendre dans cette sauvegarde.';break;
     }
     case 'reroll':{
@@ -1612,9 +1661,9 @@ view.addEventListener('click',e=>{
       const s=data&&data.app==='ma-routine'&&data.state;
       if(!s||typeof s!=='object'){st.textContent='Ce texte n’est pas une sauvegarde Ma Routine.';break}
       if(!confirm('Remplacer les données de ce téléphone par cette sauvegarde ?'))break;
-      store.set(KEY,JSON.stringify(s));state=load();resetCaches();ensureStart();save();render();rain.start();toast('Sauvegarde restaurée');break;
+      store.set(KEY,JSON.stringify(s));state=load();applyProgram();resetCaches();ensureStart();save();render();rain.start();toast('Sauvegarde restaurée');break;
     }
-    case 'reset':if(confirm('Tout effacer sur ce téléphone (objectifs, profil, repas cochés, poids) ?')){store.del(KEY);state=load();resetCaches();ensureStart();ui.k=null;ui.week=null;render();rain.start();toast('Données effacées')}break;
+    case 'reset':if(confirm('Tout effacer sur ce téléphone (objectifs, profil, repas cochés, poids) ?')){store.del(KEY);state=load();applyProgram();resetCaches();ensureStart();ui.k=null;ui.week=null;render();rain.start();toast('Données effacées')}break;
   }
 });
 view.addEventListener('change',e=>{
@@ -1624,6 +1673,13 @@ view.addEventListener('change',e=>{
     case 'meal':if(t.checked)state.checks[k]=true;else delete state.checks[k];save();keepScroll(render);break;
     case 'mealon':changePlan(k.split('|')[0],()=>{if(t.checked)delete state.offMeal[k];else state.offMeal[k]=true});break;
     case 'shop':if(t.checked)state.shop[k]=true;else delete state.shop[k];save();keepScroll(render);break;
+    case 'prog':{
+      const p=state.profile;p.prog=t.value==='custom'?'custom':'rtg';
+      if(p.prog==='custom'&&!p.days){p.days={};for(let d=0;d<7;d++)p.days[d]={k:RTG_ACT[d].k,n:''}}
+      applyProgram();bump();save();keepScroll(render);toast(p.prog==='custom'?'Programme personnel activé : choisis tes jours':(unlocked?'Programme '+RTGN()+' activé':'Programme par défaut activé'));break;
+    }
+    case 'dkind':{const p=state.profile;if(p.days&&p.days[k]&&Object.keys(KIND_LABEL).includes(t.value)){p.days[k].k=t.value;applyProgram();bump();save();keepScroll(render)}break}
+    case 'dname':{const p=state.profile;if(p.days&&p.days[k]){p.days[k].n=t.value.trim().slice(0,40);applyProgram();save();keepScroll(render)}break}
     case 'wkmeal':wkToggleMeal(k,t.checked);break;
     case 'nearkm':{const v=Number(t.value);if(NEAR_KM.includes(v)){nearUI.km=v;if(state.near){state.near.km=v;save();if(nearUI.raw)nearSearch()}}break}
     case 'nearmode':nearUI.mode=t.value==='min'?'min':'q1';nearCompute(true);nearRefresh();break;
@@ -1646,7 +1702,7 @@ view.addEventListener('change',e=>{
       else if(k==='goal')p.goal=['cut','maint','bulk'].includes(t.value)?t.value:'auto';
       else if(k==='pal'||k==='rate'){const v=num(t.value);if(v>0)p[k]=v}
       else{
-        const v=num(t.value),lim={age:[13,99],height:[120,230],weight:[30,250],target:[30,250],kgForce:[1,15],kgCourse:[1,15]}[k];
+        const v=num(t.value),lim={age:[13,99],height:[120,230],weight:[30,250],target:[30,250],kgForce:[1,15],kgCourse:[1,15],kgLight:[0.5,8]}[k];
         if(v>=lim[0]&&v<=lim[1])p[k]=(k==='age'||k==='height')?Math.round(v):Math.round(v*10)/10;
         if(k==='weight'&&v>=30&&v<=250)setWeight(todayKey(),Math.round(v*10)/10);
       }
