@@ -100,6 +100,9 @@ label.f input,label.f select{margin-top:5px}
 .shoprow .chk{grid-row:1/3}
 .shoprow .q{grid-column:2;font-weight:800;color:var(--gold)}
 .shoprow.stock .q{color:var(--muted)}
+.shoprow .pc{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:999px;background:#fff;color:#000;font-family:var(--mono);font-size:12.5px;font-weight:800;white-space:nowrap}
+.shoprow.stock .pc{background:var(--surface2);color:var(--muted)}
+.shoprow.ck .pc{opacity:.55}
 .shoprow.stock{opacity:.7}
 .shoprow.ck b{text-decoration:line-through;color:var(--muted)}
 .note{border-left:3px solid var(--gold);padding:9px 11px;background:#101216;border-radius:9px;color:#e4e7ec;font-size:12.5px;margin:12px 0}
@@ -122,8 +125,8 @@ details[open]>summary::before{content:"▾ "}
 .exrow button{background:none;border:0;color:var(--danger);font-size:16px;padding:4px 8px}
 .quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .quick button{background:#101216;border:1px solid var(--line);border-radius:999px;padding:7px 11px;font-size:13px;font-weight:700}
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(0,0,0,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:3px solid var(--gold);box-shadow:0 -2px 0 #5b6068;padding-bottom:env(safe-area-inset-bottom)}
-.tabs button{background:none;border:0;padding:8px 2px 9px;color:var(--muted);font-weight:700;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:var(--navh)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(6,1fr);background:rgba(0,0,0,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:3px solid var(--gold);box-shadow:0 -2px 0 #5b6068;padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{background:none;border:0;padding:8px 1px 9px;color:var(--muted);font-weight:700;font-size:10px;letter-spacing:-.2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:var(--navh)}
 .tabs button .i{font-size:21px;line-height:1.1}
 .tabs button .i,.meal .t,.card h3{filter:grayscale(1)}   /* les emojis restent en noir et blanc */
 .tabs button.on{color:var(--gold)}
@@ -154,7 +157,7 @@ textarea{min-height:76px;resize:vertical}
 .big,.eyebrow,.top h1,.ringtxt b{text-shadow:0 0 14px rgba(255,255,255,.4)}
 .top small::after{content:"▌";color:var(--gold);margin-left:5px;animation:blink 1.1s steps(2,start) infinite}
 @keyframes blink{50%{opacity:0}}
-@media (max-width:380px){.ringbox{width:92px;height:92px}.ringbox svg{width:92px;height:92px}.grid3{grid-template-columns:1fr 1fr}.tabs button{font-size:9.5px}.top h1{font-size:16px}}
+@media (max-width:380px){.ringbox{width:92px;height:92px}.ringbox svg{width:92px;height:92px}.grid3{grid-template-columns:1fr 1fr}.tabs button{font-size:8.5px;letter-spacing:-.3px}.top h1{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -172,6 +175,7 @@ textarea{min-height:76px;resize:vertical}
   <button type="button" data-tab="today"><span class="i">🏠</span>Aujourd’hui</button>
   <button type="button" data-tab="menus"><span class="i">🍽️</span>Menus</button>
   <button type="button" data-tab="shop"><span class="i">🛒</span>Courses</button>
+<button type="button" data-tab="cheat"><span class="i">🍔</span>Week-end</button>
   <button type="button" data-tab="goal"><span class="i">🎯</span>Objectif</button>
   <button type="button" data-tab="recipes"><span class="i">📖</span>Recettes</button>
 </nav>
@@ -190,7 +194,7 @@ const SLOTS=[{name:'Matin',ico:'☀️',pool:BREAKFASTS},{name:'Midi',ico:'🍽�
 const MEAL_BY_ID={};SLOTS.forEach(s=>s.pool.forEach(m=>{MEAL_BY_ID[m.id]=m}));
 const CAT_ORDER=['Protéines','Féculents','Légumineuses','Fruits & légumes','Épicerie'];
 const KEY='maRoutine_v1';
-const APP_VERSION='V1';
+const APP_VERSION='V2';
 
 function dateNumber(v){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');if(!m)return NaN;const t=Date.UTC(+m[1],+m[2]-1,+m[3]);return new Date(t).toISOString().slice(0,10)===v?t:NaN}
 function addDays(v,n){return new Date(dateNumber(v)+n*864e5).toISOString().slice(0,10)}
@@ -227,6 +231,245 @@ const store={
 const NUTR={petitsuisse:[0.85,0.096],eggs:[75,6.5],chicken:[1.10,0.23],turkey:[1.05,0.24],tuna:[105,23],oats:[3.7,0.13],rice:[3.55,0.07],pasta:[3.55,0.125],potatoes:[0.77,0.02],semolina:[3.6,0.12],bread:[95,3.5],lentils:[3.5,0.25],beans:[1.05,0.075],veg:[0.50,0.02],banana:[95,1.2],apple:[75,0.4],onion:[0.40,0.011],tomato:[0.35,0.014],milk:[0.46,0.033]};
 const PRICE_SRC='Prix relevés le 4 octobre 2026 sur auchan.fr pour l’Auchan Drive Hypermarché Kremlin-Bicêtre (Okabé).';
 const STARCH=new Set(Object.keys(FOODS).filter(k=>FOODS[k].cat==='Féculents'));
+
+/* ---------- Week-end cheat meal : ingrédients Auchan Okabé, recettes, menus du samedi et du dimanche ---------- */
+const WK_PRICE_SRC='Prix relevés le 9 octobre 2026 sur auchan.fr pour l’Auchan Drive Hypermarché Kremlin-Bicêtre (Okabé).';
+// clé : [rayon, unité, conditionnement, taille, libellé du lot, prix, kcal par unité, protéines par unité, singulier, pluriel, frais (ne se garde pas d'un week-end à l'autre)]
+const WF={
+  bun:['Féculents','u','Pains hamburger (Pouce)',6,'sachet de 6 pains',0.81,140,5,'pain burger','pains burger',0],
+  hdbread:['Féculents','u','Pains hot-dog (La Boulangère)',4,'sachet de 4 pains',1.70,170,5,'pain hot-dog','pains hot-dog',0],
+  wrap:['Féculents','u','Wraps de blé complet (Auchan)',6,'sachet de 6 wraps',2.46,190,5,'wrap','wraps',0],
+  kbread:['Féculents','u','Pains kebab à garnir (La Boulangère)',4,'sachet de 4 pains',2.08,220,7,'pain kebab','pains kebab',0],
+  pizza:['Féculents','u','Pâte à pizza fine et ronde (Auchan)',1,'1 pâte de 260 g',1.10,700,20,'pâte à pizza ronde','pâtes à pizza rondes',0],
+  puff:['Féculents','u','Pâte feuilletée (Auchan)',1,'1 pâte de 230 g',0.83,900,14,'pâte feuilletée','pâtes feuilletées',0],
+  brioche:['Féculents','tranche','Brioche tranchée (Pouce)',18,'sachet de 18 tranches',1.19,100,3,'tranche de brioche','tranches de brioche',0],
+  flour:['Féculents','g','Farine de blé T55 (Pouce)',1000,'paquet de 1 kg',0.54,3.5,0.10,'farine','',0],
+  fries:['Féculents','g','Frites au four extra larges (Auchan)',1000,'sachet de 1 kg',2.46,1.7,0.025,'frites au four','',0],
+  gnocchi:['Féculents','g','Gnocchi (Auchan)',380,'sachet de 380 g',1.40,1.5,0.035,'gnocchis','',0],
+  lasagna:['Féculents','g','Pâte à lasagnes (Auchan)',250,'boîte de 250 g (6 feuilles)',2.11,3.5,0.12,'feuilles de lasagne','',0],
+  patty:['Protéines','u','Steaks hachés pur bœuf 15 % (Auchan)',10,'barquette de 10 steaks (1 kg)',13.72,220,17,'steak haché (100 g)','steaks hachés (100 g)',0],
+  bacon:['Protéines','u','Bacon fumé en tranches (Pouce)',10,'sachet de 10 tranches',0.92,22,2.2,'tranche de bacon','tranches de bacon',0],
+  lardons:['Protéines','g','Lardons fumés (Auchan)',200,'lot de 2 × 100 g',1.88,2.4,0.16,'lardons fumés','',0],
+  ham:['Protéines','u','Jambon cuit fumé (Herta)',4,'lot de 4 tranches',2.40,45,7,'tranche de jambon','tranches de jambon',0],
+  chorizo:['Protéines','u','Chorizo doux tranché (Auchan)',24,'sachet de 24 tranches',1.82,20,1.2,'tranche de chorizo','tranches de chorizo',0],
+  knack:['Protéines','u','Saucisses Knacks (Auchan)',6,'sachet de 6 saucisses',1.46,90,4.5,'saucisse knack','saucisses knack',0],
+  nugget:['Protéines','u','Nuggets de filets de poulet (Auchan)',25,'sachet de 25 nuggets (500 g)',5.52,52,3,'nugget','nuggets',0],
+  crispy:['Protéines','u','Panés de poulet (Le Gaulois)',2,'barquette de 2 panés',2.25,230,15,'pané de poulet','panés de poulet',1],
+  thigh:['Protéines','g','Cuisses de poulet blanc (prix bas)',1000,'barquette de 1 kg',4.05,1.9,0.17,'cuisses de poulet','',1],
+  kebab:['Protéines','g','Lamelles de kebab (Maître Coq)',600,'sachet de 600 g',8.55,1.45,0.17,'lamelles de kebab','',0],
+  cheddar:['Protéines','u','Cheddar en tranches (Auchan)',10,'sachet de 10 tranches',1.30,70,4,'tranche de cheddar','tranches de cheddar',0],
+  mozza:['Protéines','g','Mozzarella râpée (Galbani)',150,'sachet de 150 g',3.08,2.7,0.22,'mozzarella râpée','',0],
+  emmental:['Protéines','g','Emmental râpé (Auchan)',200,'sachet de 200 g',1.68,3.7,0.27,'emmental râpé','',0],
+  fblanc:['Protéines','g','Fromage blanc 0 % (Auchan)',500,'pot de 500 g',1.01,0.45,0.08,'fromage blanc','',1],
+  salad:['Fruits & légumes','g','Laitue iceberg (Auchan)',300,'1 salade de 300 g',1.37,0.14,0.01,'salade iceberg','',1],
+  avocado:['Fruits & légumes','u','Avocat affiné',1,'1 avocat',1.39,240,3,'avocat','avocats',1],
+  rtom:['Fruits & légumes','g','Tomates rondes (prix bas)',1000,'1 kg',1.99,0.18,0.009,'tomates','',1],
+  pepper:['Fruits & légumes','g','Poivrons panachés',500,'barquette de 500 g',2.49,0.27,0.01,'poivrons','',1],
+  mush:['Fruits & légumes','g','Champignons blancs coupés',250,'barquette de 250 g',1.99,0.22,0.03,'champignons','',1],
+  corn:['Fruits & légumes','g','Maïs doux en grains (Pouce)',285,'sachet de 285 g',0.65,0.85,0.03,'maïs','',0],
+  wok:['Fruits & légumes','g','Légumes pour wok surgelés (Auchan)',750,'sachet de 750 g',3.42,0.35,0.02,'légumes pour wok','',0],
+  passata:['Épicerie','g','Passata de tomates (Auchan Tavola)',680,'bouteille de 680 g',1.60,0.32,0.014,'passata','',0],
+  tomsauce:['Épicerie','g','Pulpe de tomates concassées (Auchan)',400,'boîte de 400 g',1.28,0.25,0.012,'tomates concassées','',0],
+  cream:['Épicerie','ml','Crème fraîche épaisse légère (Auchan)',200,'pot de 20 cl',0.73,1.6,0.03,'crème fraîche','',1],
+  lcream:['Épicerie','ml','Crème fluide légère (Auchan)',600,'lot de 3 briques de 20 cl',1.94,1.6,0.03,'crème fluide','',0],
+  butter:['Épicerie','g','Beurre doux (Président)',250,'plaquette de 250 g',2.76,7.4,0.005,'beurre','',0],
+  ketchup:['Épicerie','g','Ketchup (Auchan)',560,'flacon de 560 g',1.30,1.1,0.01,'ketchup','',0],
+  mayo:['Épicerie','g','Mayonnaise (Pouce)',470,'pot de 470 g',1.19,7.0,0.01,'mayonnaise','',0],
+  bbq:['Épicerie','g','Sauce barbecue (Heinz)',480,'flacon de 480 g',2.37,1.3,0.01,'sauce barbecue','',0],
+  soy:['Épicerie','ml','Sauce soja salée (Auchan)',150,'bouteille de 15 cl',1.66,0.6,0.08,'sauce soja','',0],
+  pickle:['Épicerie','g','Cornichons (Auchan)',360,'bocal de 360 g',2.30,0.15,0.01,'cornichons','',0],
+  ofried:['Épicerie','g','Oignons frits (Auchan)',100,'sachet de 100 g',1.10,5.5,0.04,'oignons frits','',0],
+  sugar:['Épicerie','g','Sucre en poudre (Pouce)',1000,'paquet de 1 kg',0.79,4.0,0,'sucre','',0],
+  honey:['Épicerie','g','Miel de fleurs (Auchan)',250,'flacon de 250 g',2.13,3.0,0.004,'miel','',0],
+  choco:['Épicerie','g','Chocolat noir pâtissier (Auchan)',200,'tablette de 200 g',1.83,5.3,0.06,'chocolat noir','',0],
+  spread:['Épicerie','g','Pâte à tartiner (Nutella)',630,'pot de 630 g',5.34,5.4,0.06,'pâte à tartiner','',0],
+  coco:['Épicerie','ml','Lait de coco (Auchan)',200,'brique de 20 cl',0.89,1.7,0.015,'lait de coco','',0],
+};
+const WFOODS={},WNUTR={},WK_LABEL={},WK_FRESH=new Set(['banana','chicken']);
+Object.entries(WF).forEach(([k,a])=>{
+  WFOODS[k]={cat:a[0],unit:a[1],pack:a[2],packSize:a[3],packLabel:a[4],packPrice:a[5]};
+  WNUTR[k]=[a[6],a[7]];WK_LABEL[k]=[a[8],a[9]];
+  if(a[10])WK_FRESH.add(k);
+});
+// ingrédients déjà dans le catalogue de la semaine, réutilisés le week-end
+Object.assign(WK_LABEL,{eggs:['œuf','œufs'],milk:['lait',''],potatoes:['pommes de terre',''],rice:['riz (cru)',''],pasta:['pâtes (crues)',''],chicken:['filet de poulet',''],onion:['oignon',''],beans:['haricots rouges cuits',''],oats:['flocons d’avoine',''],bread:['tranche de pain de mie','tranches de pain de mie'],banana:['banane','bananes']});
+const wkFood=k=>FOODS[k]||WFOODS[k];
+const wkNutr=k=>NUTR[k]||WNUTR[k];
+function wkIng(k,q){
+  const f=wkFood(k),l=WK_LABEL[k]||[k,''];
+  if(f.unit==='g'||f.unit==='ml')return `${q} ${f.unit} ${l[0]}`;
+  return `${q} ${q>1&&l[1]?l[1]:l[0]}`;
+}
+
+/* Recettes : 1 personne. slot 0 = petit-déjeuner, 1 = repas (midi ou soir). Sel, poivre, huile, épices et ail sont des fonds de placard. */
+const WK_THEMES=[
+  {n:'Burger party',ico:'🍔',d:'burgers, hot-dogs, nuggets et frites'},
+  {n:'Pizza & pasta',ico:'🍕',d:'pizzas maison, pâtes crémeuses et gratins'},
+  {n:'Tex-Mex',ico:'🌮',d:'tacos, burritos, chili et quesadillas'},
+  {n:'Street food',ico:'🥙',d:'kebab, riz sauté, curry coco et nouilles'},
+];
+const WR=(id,name,theme,slot,shop,steps,tips)=>({id,name,theme,slot,type:slot===0?'Matin':'Midi ou soir',shop,steps,tips});
+const WK_RECIPES=[
+  /* ---- petits-déjeuners cheat (tous les mois) ---- */
+  WR('wb1','Pancakes moelleux banane-chocolat',-1,0,{flour:80,milk:150,eggs:2,sugar:10,banana:1,choco:20,butter:8},
+    ['Mélange la farine, le sucre, les œufs et le lait jusqu’à obtenir une pâte lisse.','Fais fondre un peu de beurre dans une poêle chaude et verse une petite louche de pâte. Retourne quand des bulles apparaissent.','Empile les pancakes, ajoute la banane en rondelles et le chocolat fondu au bain-marie ou au micro-ondes.'],'Laisse reposer la pâte 10 minutes pour des pancakes plus épais.'),
+  WR('wb2','Pancakes miel & fromage blanc',-1,0,{flour:80,milk:150,eggs:1,honey:20,fblanc:150,banana:1,butter:8},
+    ['Prépare la pâte avec la farine, l’œuf et le lait.','Cuis les pancakes à la poêle beurrée, 2 minutes de chaque côté.','Sers avec le fromage blanc, le miel et la banane en rondelles.'],'Une pincée de cannelle dans la pâte donne un goût de gâteau.'),
+  WR('wb3','Pain perdu brioché à la cannelle',-1,0,{brioche:5,eggs:2,milk:100,sugar:15,butter:10},
+    ['Bats les œufs avec le lait, le sucre et la cannelle dans une assiette creuse.','Trempe les tranches de brioche 20 secondes de chaque côté.','Dore-les à la poêle dans le beurre, 2 minutes par face.'],'Plus la brioche est rassise, mieux elle absorbe le mélange.'),
+  WR('wb4','Pain perdu pâte à tartiner & banane',-1,0,{brioche:4,eggs:2,milk:80,spread:30,banana:1,butter:8},
+    ['Bats les œufs avec le lait puis trempe les tranches de brioche.','Fais-les dorer à la poêle dans le beurre.','Tartine la pâte à tartiner sur deux tranches, ajoute la banane et referme en sandwich.'],'Réchauffe la pâte à tartiner 10 secondes pour qu’elle s’étale mieux.'),
+  WR('wb5','Burger du matin œuf-bacon-cheddar',-1,0,{bun:1,eggs:2,bacon:3,cheddar:2,ketchup:10,potatoes:150,butter:8},
+    ['Coupe les pommes de terre en dés, fais-les dorer 12 minutes à la poêle avec un peu de beurre.','Fais griller le bacon, puis cuis les œufs au plat.','Garnis le pain toasté : cheddar, bacon, œuf, ketchup. Sers avec les pommes de terre.'],'Pose le cheddar sur l’œuf chaud pour qu’il fonde.'),
+  WR('wb6','Burrito du matin',-1,0,{wrap:2,eggs:3,bacon:3,cheddar:2,pepper:40,butter:5},
+    ['Fais griller le bacon puis émince-le. Fais revenir le poivron en dés.','Brouille les œufs dans une poêle beurrée avec le bacon et le poivron.','Garnis les wraps chauds avec les œufs et le cheddar, puis roule-les serrés.'],'Chauffe les wraps 15 secondes à sec pour qu’ils ne se déchirent pas.'),
+  WR('wb7','Omelette cheddar-jambon & toasts',-1,0,{eggs:3,ham:2,cheddar:2,bread:3,butter:10},
+    ['Bats les œufs, sale et poivre.','Verse dans une poêle beurrée, ajoute le jambon en lanières et le cheddar, plie l’omelette.','Fais griller le pain, beurre-le et sers avec l’omelette.'],'Cuisson douce : l’omelette doit rester baveuse au centre.'),
+  WR('wb8','Croque-madame du dimanche',-1,0,{bread:4,ham:2,emmental:50,butter:10,eggs:1,milk:30},
+    ['Beurre les tranches, garnis de jambon et d’emmental, referme les croque-monsieur.','Dore-les à la poêle à feu doux, couvercle posé, 4 minutes par face.','Ajoute un œuf au plat sur le dessus et sers aussitôt.'],'Un filet de lait dans la poêle empêche le fromage de brûler.'),
+  WR('wb9','Crêpes fourrées pâte à tartiner-banane',-1,0,{flour:80,milk:200,eggs:2,sugar:10,spread:30,banana:1},
+    ['Mélange farine, œufs, sucre puis délaie avec le lait pour une pâte fluide.','Cuis les crêpes dans une poêle chaude, fines, 1 minute de chaque côté.','Tartine de pâte à tartiner, ajoute la banane et plie.'],'Verse la première crêpe d’essai : la poêle doit être bien chaude.'),
+  WR('wb10','Porridge brownie',-1,0,{oats:70,milk:250,choco:25,banana:1,honey:10},
+    ['Fais chauffer le lait avec l’avoine 5 minutes en remuant.','Hors du feu, ajoute le chocolat en morceaux et mélange jusqu’à ce qu’il fonde.','Termine avec la banane en rondelles et un filet de miel.'],'Prépare-le la veille pour un overnight oats : il se mange froid.'),
+  WR('wb11','Toasts avocat, œuf & bacon',-1,0,{bread:3,avocado:1,eggs:2,bacon:2,butter:5},
+    ['Fais griller le pain et le bacon.','Écrase l’avocat avec sel, poivre et un peu de citron si tu en as.','Cuis les œufs au plat, puis monte les toasts : avocat, bacon, œuf.'],'Un peu de piment ou de paprika sur l’œuf relève le tout.'),
+  WR('wb12','Fromage blanc gourmand, brioche & miel',-1,0,{fblanc:250,brioche:4,honey:15,banana:1,choco:10},
+    ['Fais dorer la brioche à sec dans une poêle ou au grille-pain.','Verse le fromage blanc dans un bol, ajoute le miel, la banane et des copeaux de chocolat.','Mange la brioche tiède à côté.'],'Râpe le chocolat avec un économe pour de beaux copeaux.'),
+  WR('wb13','Œufs brouillés crémeux, bacon & pommes de terre',-1,0,{eggs:3,cream:30,bacon:3,potatoes:250,butter:10},
+    ['Coupe les pommes de terre en petits dés et fais-les sauter 12 minutes dans le beurre.','Fais griller le bacon.','Brouille les œufs à feu doux avec la crème fraîche jusqu’à une texture crémeuse. Sers le tout ensemble.'],'Retire les œufs du feu un peu avant la fin : ils finissent de cuire dans l’assiette.'),
+  WR('wb14','Œufs cocotte tomate-chorizo & toasts',-1,0,{eggs:3,tomsauce:120,chorizo:6,bread:2,onion:30,cheddar:1},
+    ['Fais revenir l’oignon, ajoute les tomates concassées et le chorizo, laisse mijoter 8 minutes.','Verse dans un plat, creuse trois puits et casse un œuf dans chacun.','Pose le cheddar en lamelles, couvre et laisse cuire 6 minutes. Sers avec le pain grillé.'],'Les blancs doivent être pris et les jaunes encore coulants.'),
+
+  /* ---- thème 0 : Burger party ---- */
+  WR('wm01','Cheeseburger bacon & frites au four',0,1,{bun:1,patty:2,cheddar:2,bacon:2,salad:40,ketchup:15,mayo:15,fries:200,pickle:20},
+    ['Enfourne les frites 20 minutes à 220 °C en les retournant à mi-cuisson.','Cuis les steaks 3 minutes de chaque côté, pose le cheddar à la fin pour le faire fondre. Fais griller le bacon.','Toaste le pain, tartine de mayonnaise et de ketchup, monte : salade, steak, cheddar, bacon, cornichons.'],'Presse le steak à la spatule dès qu’il touche la poêle pour une croûte bien dorée.'),
+  WR('wm02','Burger poulet croustillant',0,1,{bun:1,crispy:1,salad:40,mayo:20,cheddar:1,pickle:20,fries:200},
+    ['Cuis le pané de poulet au four ou à la poêle selon l’emballage, jusqu’à ce qu’il soit bien doré.','Toaste le pain, tartine de mayonnaise.','Monte le burger : salade, poulet, cheddar, cornichons. Sers avec les frites au four.'],'Mélange mayonnaise et un peu de ketchup pour une sauce maison.'),
+  WR('wm03','Hot-dogs américains oignons frits',0,1,{hdbread:2,knack:2,ofried:20,ketchup:20,mayo:10,cheddar:1,fries:150},
+    ['Fais chauffer les saucisses dans l’eau frémissante 5 minutes, puis dore-les à la poêle.','Fends les pains et fais-les chauffer.','Garnis : saucisse, cheddar, ketchup, mayonnaise, oignons frits. Sers avec les frites.'],'Pour des saucisses plus savoureuses, fais-les griller 2 minutes à la poêle bien chaude.'),
+  WR('wm04','Nuggets croustillants & frites cheddar',0,1,{nugget:10,fries:250,cheddar:2,bbq:30},
+    ['Enfourne nuggets et frites sur deux plaques, 15 à 20 minutes à 220 °C.','Pose les tranches de cheddar sur les frites chaudes et remets 1 minute au four.','Sers avec la sauce barbecue pour tremper.'],'Retourne les nuggets à mi-cuisson pour qu’ils soient croustillants des deux côtés.'),
+  WR('wm05','Cuisses de poulet croustillantes & potatoes',0,1,{thigh:400,potatoes:300,bbq:30,onion:40},
+    ['Badigeonne les cuisses de sauce barbecue, sel et poivre.','Dispose-les avec les pommes de terre en quartiers et l’oignon sur une plaque. Enfourne 40 minutes à 200 °C.','Arrose avec le jus de cuisson et sers très chaud.'],'Laisse la peau vers le haut pour qu’elle croustille.'),
+  WR('wm06','Burger bacon-BBQ & oignons frits',0,1,{bun:1,patty:2,bacon:2,bbq:25,ofried:20,cheddar:2,salad:30,fries:150},
+    ['Cuis les steaks puis pose le cheddar dessus. Fais griller le bacon.','Toaste le pain et tartine de sauce barbecue.','Monte : salade, steak, cheddar, bacon, oignons frits. Accompagne de frites au four.'],'Ajoute les oignons frits au dernier moment pour garder leur croquant.'),
+  WR('wm07','Mac & cheese au bacon',0,1,{pasta:150,emmental:60,lcream:100,butter:15,lardons:60,milk:100},
+    ['Cuis les pâtes. Fais dorer les lardons à sec.','Dans une casserole, fais fondre le beurre, ajoute le lait, la crème et l’emmental en remuant jusqu’à obtenir une sauce lisse.','Mélange les pâtes avec la sauce et les lardons. Gratine 5 minutes si tu veux une croûte.'],'Garde un peu d’eau de cuisson pour détendre la sauce.'),
+  WR('wm08','Chili cheese fries',0,1,{fries:250,patty:1,tomsauce:100,beans:100,cheddar:2,onion:40},
+    ['Enfourne les frites 20 minutes à 220 °C.','Fais revenir l’oignon et le steak émietté, ajoute la tomate et les haricots, laisse mijoter 10 minutes avec sel, poivre et piment.','Verse le chili sur les frites, couvre de cheddar et passe 2 minutes au four.'],'Un peu de paprika fumé donne un goût de barbecue.'),
+  WR('wm09','Wraps poulet croustillant',0,1,{wrap:2,crispy:1,salad:40,mayo:20,cheddar:1,rtom:60},
+    ['Cuis le pané de poulet et coupe-le en lanières.','Chauffe les wraps, tartine de mayonnaise.','Garnis : salade, tomates, poulet, cheddar, puis roule serré.'],'Coupe le wrap en deux en biais pour un joli rendu.'),
+  WR('wm10','Grilled cheese bacon & soupe de tomates',0,1,{bread:4,cheddar:3,emmental:40,butter:15,bacon:3,tomsauce:200,milk:100,onion:40},
+    ['Fais revenir l’oignon, ajoute les tomates concassées et le lait, cuis 10 minutes puis mixe : c’est la soupe.','Beurre les tranches, garnis de cheddar, emmental et bacon croustillant.','Dore les sandwichs à la poêle à feu doux, 3 minutes par face. Trempe dans la soupe.'],'Le feu doux évite que le pain brûle avant que le fromage ne fonde.'),
+  WR('wm11','Burger œuf-bacon-cheddar',0,1,{bun:1,patty:2,eggs:1,bacon:2,cheddar:2,rtom:50,ketchup:15,fries:150},
+    ['Cuis les steaks, pose le cheddar. Fais griller le bacon et cuis l’œuf au plat.','Toaste le pain, ajoute le ketchup.','Monte : steak, cheddar, bacon, œuf, tomate. Sers avec les frites.'],'Pique le jaune de l’œuf à la fourchette : il coule sur le steak.'),
+  WR('wm12','Pommes de terre farcies façon burger',0,1,{potatoes:400,patty:1,cheddar:2,cream:50,lardons:40,onion:30},
+    ['Cuis les pommes de terre entières 40 minutes à 200 °C (ou 10 minutes au micro-ondes puis 15 au four).','Fais dorer lardons, oignon et steak émietté.','Ouvre les pommes de terre, garnis de viande, de cheddar et de crème fraîche, gratine 5 minutes.'],'Pique les pommes de terre à la fourchette avant cuisson.'),
+  WR('wm13','Poulet BBQ, maïs & pommes de terre grillées',0,1,{thigh:400,bbq:40,corn:140,potatoes:250},
+    ['Badigeonne les cuisses de sauce barbecue et enfourne 35 minutes à 200 °C.','Ajoute les pommes de terre en quartiers dès le début de cuisson.','Réchauffe le maïs à la poêle avec un peu de beurre ou d’huile et sers ensemble.'],'Prolonge la cuisson de 5 minutes à four très chaud pour caraméliser la sauce.'),
+  WR('wm14','Double smash burger & frites',0,1,{bun:1,patty:2,cheddar:2,onion:40,pickle:20,mayo:20,ketchup:10,fries:150},
+    ['Divise chaque steak en deux boules, écrase-les très fins sur une poêle brûlante : 90 secondes par face.','Superpose deux galettes avec le cheddar.','Toaste le pain, monte avec oignon cru, cornichons, mayonnaise et ketchup. Sers avec les frites.'],'Sale au dernier moment, juste avant d’écraser la viande.'),
+
+  /* ---- thème 1 : Pizza & pasta ---- */
+  WR('wm15','Pizza reine maison',1,1,{pizza:1,passata:80,ham:2,mush:60,emmental:40,mozza:60},
+    ['Préchauffe le four à 240 °C. Étale la pâte sur une plaque.','Étale la passata, ajoute le jambon, les champignons émincés et les fromages.','Enfourne 12 minutes jusqu’à ce que les bords soient dorés.'],'Fais précuire la pâte 3 minutes avant de garnir pour un fond plus croustillant.'),
+  WR('wm16','Pizza chorizo-poivrons',1,1,{pizza:1,passata:80,chorizo:12,pepper:60,onion:30,mozza:60},
+    ['Étale la pâte et la passata assaisonnée d’origan.','Répartis chorizo, poivrons en lamelles, oignon et mozzarella.','Cuis 12 minutes à 240 °C.'],'Passe le chorizo à la poêle 30 secondes pour libérer son huile.'),
+  WR('wm17','Pizza 4 fromages',1,1,{pizza:1,cream:60,mozza:50,emmental:30,cheddar:1},
+    ['Étale la pâte et nappe-la de crème fraîche poivrée.','Répartis la mozzarella, l’emmental et le cheddar en morceaux.','Cuis 12 minutes à 240 °C.'],'Une pincée de noix de muscade dans la crème fait toute la différence.'),
+  WR('wm18','Tarte flambée lardons-oignons',1,1,{pizza:1,cream:80,lardons:70,onion:60,emmental:30},
+    ['Étale la pâte et nappe-la de crème fraîche, sel, poivre et muscade.','Ajoute les oignons émincés finement, les lardons et l’emmental.','Cuis 10 à 12 minutes à 240 °C.'],'Émince l’oignon très fin pour qu’il cuise sans sécher.'),
+  WR('wm19','Calzone jambon-champignons',1,1,{pizza:1,passata:60,ham:2,mush:50,mozza:60,eggs:1},
+    ['Étale la pâte, garnis la moitié de passata, jambon, champignons et mozzarella.','Replie la pâte, soude les bords à la fourchette, dore avec un peu d’œuf battu.','Cuis 15 minutes à 220 °C.'],'Pique le dessus avec la pointe d’un couteau pour laisser sortir la vapeur.'),
+  WR('wm20','Spaghetti carbonara gourmande',1,1,{pasta:150,lardons:70,eggs:2,emmental:30,cream:40},
+    ['Cuis les pâtes. Fais dorer les lardons à sec.','Mélange les œufs, la crème et l’emmental avec du poivre.','Hors du feu, mélange les pâtes chaudes avec les lardons puis la sauce : elle nappe sans cuire en omelette.'],'Garde un peu d’eau de cuisson pour lier la sauce.'),
+  WR('wm21','Lasagnes express',1,1,{lasagna:100,patty:2,passata:150,onion:40,emmental:50,lcream:60},
+    ['Fais revenir l’oignon et les steaks émiettés, ajoute la passata et cuis 10 minutes.','Alterne dans un plat : viande, feuilles de lasagne, crème, emmental.','Enfourne 30 minutes à 200 °C.'],'Les feuilles peuvent aller crues dans le plat si la sauce est assez liquide.'),
+  WR('wm22','Gnocchis gratinés crème-lardons',1,1,{gnocchi:300,lcream:100,lardons:60,emmental:50,mush:60},
+    ['Fais dorer lardons et champignons à la poêle.','Ajoute la crème, puis les gnocchis (cuits 2 minutes à l’eau bouillante).','Verse dans un plat, couvre d’emmental et gratine 8 minutes.'],'Dore les gnocchis à la poêle avant pour plus de croustillant.'),
+  WR('wm23','Pâtes bolognaise ultra-gourmande',1,1,{pasta:150,patty:2,passata:150,onion:40,emmental:25},
+    ['Fais revenir l’oignon et les steaks émiettés.','Ajoute la passata, sel, poivre, origan, et laisse mijoter 15 minutes.','Mélange avec les pâtes et parsème d’emmental.'],'Un carré de chocolat noir dans la sauce adoucit l’acidité de la tomate.'),
+  WR('wm24','Pâtes crémeuses poulet-champignons',1,1,{pasta:150,chicken:150,lcream:100,mush:80,emmental:20},
+    ['Coupe le poulet en dés et fais-le dorer. Ajoute les champignons.','Verse la crème, laisse réduire 5 minutes.','Mélange avec les pâtes cuites et l’emmental.'],'Sale le poulet seulement à la fin de la cuisson pour qu’il reste tendre.'),
+  WR('wm25','Tarte pizza feuilletée chorizo',1,1,{puff:1,passata:70,chorizo:6,mozza:40,rtom:60},
+    ['Déroule la pâte feuilletée sur sa plaque et pique-la.','Étale la passata puis ajoute tomates en rondelles, chorizo et mozzarella.','Cuis 20 minutes à 200 °C.'],'Laisse 1 cm de bord sans garniture pour qu’il gonfle bien.'),
+  WR('wm26','Croque-monsieur géant & salade',1,1,{bread:4,ham:2,emmental:60,butter:10,milk:100,flour:10,salad:60},
+    ['Prépare une béchamel : beurre fondu, farine, lait, sel, muscade.','Beurre les tranches, garnis de jambon, d’emmental et de béchamel.','Gratine 10 minutes à 200 °C avec le reste d’emmental. Sers avec la salade.'],'Retourne-le à mi-cuisson pour qu’il soit doré partout.'),
+  WR('wm27','Gratin de pâtes jambon-fromage',1,1,{pasta:150,ham:2,emmental:70,lcream:80,milk:50},
+    ['Cuis les pâtes. Coupe le jambon en lanières.','Mélange pâtes, jambon, crème et lait dans un plat.','Couvre d’emmental et gratine 15 minutes à 200 °C.'],'Ajoute une cuillère de moutarde dans la crème pour relever.'),
+  WR('wm28','Pizza saucisse-oignons',1,1,{pizza:1,passata:80,knack:2,onion:50,mozza:60},
+    ['Étale la pâte, nappe de passata.','Ajoute les saucisses en rondelles, l’oignon émincé et la mozzarella.','Cuis 12 minutes à 240 °C.'],'Fais revenir l’oignon 3 minutes avant pour le rendre fondant.'),
+
+  /* ---- thème 2 : Tex-Mex ---- */
+  WR('wm29','Tacos de poulet fromagers',2,1,{wrap:2,chicken:150,pepper:60,onion:30,cheddar:2,cream:40,passata:50},
+    ['Coupe le poulet en lanières et fais-le sauter avec poivron et oignon, paprika et cumin.','Réchauffe les wraps, garnis de poulet, passata, crème fraîche.','Ajoute le cheddar, plie les wraps et passe-les 1 minute à la poêle.'],'Un peu de piment en poudre dans la crème fraîche fait une sauce relevée.'),
+  WR('wm30','Burritos bœuf-haricots-riz',2,1,{wrap:2,patty:1,beans:120,rice:70,corn:50,cheddar:2,passata:50},
+    ['Cuis le riz. Fais revenir les steaks émiettés avec épices.','Ajoute haricots, maïs et passata, laisse mijoter 8 minutes.','Garnis les wraps de riz, de viande et de cheddar, roule serré et dore à la poêle.'],'Plie les côtés du wrap avant de rouler pour qu’il ne coule pas.'),
+  WR('wm31','Fajitas de poulet aux poivrons',2,1,{wrap:2,chicken:180,pepper:100,onion:50,cream:50,cheddar:1},
+    ['Coupe poulet, poivrons et oignon en lanières.','Fais sauter à feu vif avec paprika, cumin et ail pendant 8 minutes.','Garnis les wraps chauds, ajoute la crème fraîche et le cheddar.'],'Ne remplis pas trop la poêle : les légumes doivent griller et non bouillir.'),
+  WR('wm32','Chili con carne & riz',2,1,{patty:2,beans:150,tomsauce:200,onion:50,rice:80,cheddar:1},
+    ['Fais revenir l’oignon et les steaks émiettés avec paprika, cumin et piment.','Ajoute tomates et haricots, laisse mijoter 20 minutes.','Sers sur le riz avec du cheddar fondu.'],'Il est encore meilleur réchauffé le lendemain.'),
+  WR('wm33','Quesadillas poulet-cheddar',2,1,{wrap:2,chicken:120,cheddar:4,pepper:50,cream:40},
+    ['Fais sauter poulet et poivron avec cumin.','Garnis la moitié de chaque wrap de poulet, cheddar et plie.','Dore à la poêle 2 minutes par face. Sers avec la crème fraîche.'],'Appuie avec une spatule pour bien souder les deux faces.'),
+  WR('wm34','Enchiladas gratinées',2,1,{wrap:2,chicken:150,passata:100,emmental:50,cheddar:2,onion:30},
+    ['Fais revenir poulet émincé et oignon avec épices, ajoute la moitié de la passata.','Remplis les wraps, roule-les et pose-les dans un plat.','Nappe du reste de passata, couvre de fromage et gratine 15 minutes à 200 °C.'],'Pose les wraps côté fermeture vers le bas.'),
+  WR('wm35','Burger tex-mex guacamole',2,1,{bun:1,patty:2,avocado:1,cheddar:2,bacon:2,rtom:40},
+    ['Écrase l’avocat à la fourchette avec sel, piment et un peu de tomate en dés.','Cuis les steaks, pose le cheddar. Fais griller le bacon.','Monte : pain toasté, steak, cheddar, bacon, guacamole.'],'Garde le noyau dans le guacamole pour qu’il ne noircisse pas.'),
+  WR('wm36','Riz mexicain & poulet épicé',2,1,{rice:100,chicken:180,pepper:80,corn:80,tomsauce:100,onion:40,cheddar:1},
+    ['Fais revenir l’oignon, le poulet en dés et les poivrons avec paprika et cumin.','Ajoute le riz cru, les tomates, le maïs et deux fois son volume d’eau.','Couvre et laisse cuire 15 minutes. Parsème de cheddar.'],'Ne soulève pas le couvercle pendant la cuisson du riz.'),
+  WR('wm37','Bowl burrito',2,1,{rice:100,beans:100,patty:1,corn:60,avocado:1,cream:40,cheddar:1},
+    ['Cuis le riz. Fais revenir le steak émietté avec des épices.','Réchauffe haricots et maïs.','Dresse dans un bol : riz, viande, haricots, maïs, avocat en tranches, crème et cheddar.'],'Presse un peu de jus de citron sur l’avocat pour qu’il garde sa couleur.'),
+  WR('wm38','French tacos nuggets-cheddar',2,1,{wrap:2,nugget:6,fries:120,cheddar:2,mayo:15,bbq:20},
+    ['Enfourne nuggets et frites 18 minutes à 220 °C.','Étale mayonnaise et sauce barbecue sur les wraps, garnis de nuggets, frites et cheddar.','Roule en tacos et fais dorer à la poêle ou au grill 2 minutes par face.'],'Chauffe-les sous un poids pour obtenir un tacos bien compact.'),
+  WR('wm39','Cheese dogs façon chili',2,1,{hdbread:2,knack:2,beans:80,tomsauce:80,cheddar:2,onion:30},
+    ['Fais revenir l’oignon, ajoute haricots et tomates, assaisonne de paprika et piment : c’est le chili.','Chauffe les saucisses et les pains.','Garnis : saucisse, chili, cheddar, et passe 1 minute au four.'],'Écrase un peu les haricots pour épaissir le chili.'),
+  WR('wm40','Pizza-wraps chorizo',2,1,{wrap:2,passata:60,chorizo:8,cheddar:2,mozza:50,pepper:40},
+    ['Étale la passata sur les wraps posés sur une plaque.','Ajoute chorizo, poivron et fromages.','Enfourne 8 minutes à 220 °C jusqu’à ce que les bords croustillent.'],'Pose un wrap sur un autre pour un fond plus croustillant.'),
+  WR('wm41','Poulet pané & guacamole en wrap',2,1,{wrap:1,crispy:1,avocado:1,salad:40,rtom:50,cream:30},
+    ['Cuis le pané de poulet. Écrase l’avocat en guacamole.','Chauffe le wrap, étale le guacamole et la crème fraîche.','Ajoute salade, tomates et poulet en lanières, puis roule.'],'Ajoute des oignons frits pour le croquant.'),
+  WR('wm42','Omelette tex-mex & pommes de terre sautées',2,1,{eggs:4,chorizo:8,pepper:60,cheddar:2,potatoes:250,onion:30},
+    ['Fais sauter les pommes de terre en dés 12 minutes avec l’oignon.','Ajoute poivron et chorizo, puis verse les œufs battus.','Couvre de cheddar, laisse prendre à feu doux et plie.'],'Cuisine à couvert pour que le dessus cuise sans retourner.'),
+
+  /* ---- thème 3 : Street food ---- */
+  WR('wm43','Kebab maison & frites',3,1,{kbread:1,kebab:180,rtom:60,salad:40,onion:30,fblanc:60,fries:150},
+    ['Fais dorer les lamelles de kebab à la poêle très chaude avec paprika et cumin.','Mélange le fromage blanc avec ail, sel et poivre : c’est la sauce blanche.','Garnis le pain chaud : salade, tomates, oignon, viande, sauce. Sers avec les frites.'],'Plus la poêle est chaude, plus la viande se caramélise.'),
+  WR('wm44','Assiette kebab-frites',3,1,{kebab:200,fries:250,salad:50,rtom:50,onion:30,fblanc:50},
+    ['Enfourne les frites 20 minutes à 220 °C.','Dore la viande à la poêle avec épices.','Dresse l’assiette : frites, viande, salade, tomates, oignon, sauce au fromage blanc.'],'Une pointe de harissa dans la sauce blanche si tu aimes le piquant.'),
+  WR('wm45','Riz sauté poulet-œuf',3,1,{rice:110,chicken:150,eggs:2,wok:150,soy:30},
+    ['Cuis le riz à l’avance et laisse-le refroidir quelques minutes.','Fais sauter le poulet en dés puis les légumes pour wok à feu vif.','Ajoute le riz, la sauce soja et les œufs brouillés dans la poêle, mélange 3 minutes.'],'Le riz de la veille donne un meilleur riz sauté, il colle moins.'),
+  WR('wm46','Nouilles sautées poulet-légumes',3,1,{pasta:150,chicken:150,wok:200,soy:30,honey:10},
+    ['Cuis les pâtes (en guise de nouilles) et égoutte-les.','Fais sauter poulet et légumes pour wok à feu vif 6 minutes.','Ajoute les pâtes, la sauce soja et le miel, mélange bien 2 minutes.'],'Mouille avec un peu d’eau de cuisson si ça accroche.'),
+  WR('wm47','Poulet soja-miel & riz',3,1,{chicken:200,soy:30,honey:15,rice:100,wok:150},
+    ['Fais dorer le poulet en morceaux.','Verse soja et miel, laisse caraméliser 3 minutes.','Fais sauter les légumes à part et sers avec le riz.'],'Ajoute un filet de jus de citron en fin de cuisson si tu en as.'),
+  WR('wm48','Curry coco poulet & riz',3,1,{chicken:180,coco:200,wok:150,rice:100,onion:40},
+    ['Fais revenir l’oignon et le poulet en dés avec curry en poudre.','Ajoute les légumes et le lait de coco, laisse mijoter 12 minutes.','Sers sur le riz cuit.'],'Le curry doit « torréfier » 30 secondes dans l’huile avant le liquide.'),
+  WR('wm49','Nuggets sauce aigre-douce & riz',3,1,{nugget:10,rice:100,ketchup:20,honey:10,soy:10,wok:100},
+    ['Enfourne les nuggets 15 à 20 minutes à 220 °C.','Chauffe ketchup, miel et soja dans une casserole 2 minutes : c’est la sauce aigre-douce.','Sers nuggets et légumes sautés sur le riz, nappés de sauce.'],'Roule les nuggets dans la sauce chaude pour bien les enrober.'),
+  WR('wm50','Bol de riz bœuf façon bulgogi',3,1,{patty:2,soy:30,honey:15,rice:100,onion:40,wok:100,eggs:1},
+    ['Émiette les steaks et fais-les revenir avec oignon.','Ajoute soja et miel, laisse caraméliser 3 minutes. Cuis les légumes à part.','Dresse sur le riz avec un œuf au plat.'],'Une cuillère de pâte de piment rend la sauce très proche de la recette coréenne.'),
+  WR('wm51','Omelette aux légumes façon wok',3,1,{eggs:4,wok:150,soy:20,rice:100},
+    ['Fais sauter les légumes pour wok 5 minutes avec un peu de soja.','Verse les œufs battus et laisse prendre à feu moyen, plie en deux.','Sers avec le riz.'],'Ajoute une pointe de miel dans les œufs pour équilibrer le soja.'),
+  WR('wm52','Burger teriyaki',3,1,{bun:1,patty:2,soy:15,honey:15,salad:30,onion:30,fries:150},
+    ['Fais cuire les steaks, ajoute soja et miel à la fin pour les glacer.','Fais revenir l’oignon en rondelles.','Toaste le pain, monte : salade, steak laqué, oignons. Sers avec les frites.'],'Arrose le steak 2 fois avec la sauce pour une belle laque.'),
+  WR('wm53','Wraps kebab poulet',3,1,{wrap:2,kebab:180,salad:40,rtom:60,fblanc:60,onion:20},
+    ['Dore les lamelles de kebab à la poêle avec épices.','Mélange le fromage blanc avec ail et poivre.','Garnis les wraps chauds : sauce, salade, tomates, oignon, viande, puis roule.'],'Enveloppe dans du papier cuisson pour manger sans en mettre partout.'),
+  WR('wm54','Pâtes crémeuses coco-poulet-curry',3,1,{pasta:140,chicken:150,coco:200,mush:60},
+    ['Fais revenir poulet et champignons avec curry.','Ajoute le lait de coco, laisse réduire 8 minutes.','Mélange avec les pâtes cuites.'],'Quelques gouttes de sauce soja renforcent le goût.'),
+  WR('wm55','Frites loaded façon kebab',3,1,{fries:300,kebab:130,cheddar:2,fblanc:60,onion:30},
+    ['Enfourne les frites 20 minutes à 220 °C.','Dore la viande à la poêle avec épices.','Dresse frites, viande et cheddar, passe 1 minute au four, puis nappe de sauce au fromage blanc et d’oignon.'],'Prépare la sauce blanche avec ail et un peu de citron.'),
+  WR('wm56','Gnocchis sautés poulet-soja',3,1,{gnocchi:300,chicken:120,wok:150,soy:25},
+    ['Fais dorer les gnocchis à la poêle sans les cuire à l’eau, jusqu’à ce qu’ils soient croustillants.','Ajoute poulet en dés et légumes pour wok, fais sauter 6 minutes.','Termine avec la sauce soja.'],'Les gnocchis du paquet se dorent directement à la poêle : pas besoin de les bouillir.'),
+];
+// calories, protéines et coût (au prorata) de chaque recette : calculés à partir des quantités (+ 30 kcal de matière grasse pour les repas)
+WK_RECIPES.forEach(r=>{
+  let k=r.slot===0?0:30,p=0,c=0.15;
+  Object.entries(r.shop).forEach(([f,q])=>{const n=wkNutr(f);k+=q*n[0];p+=q*n[1];c+=q/wkFood(f).packSize*wkFood(f).packPrice});
+  r.kcal=Math.round(k/5)*5;r.protein=Math.round(p);r.cost0=Math.round(c*100)/100;
+  r.ingredients=Object.entries(r.shop).map(([f,q])=>wkIng(f,q));
+});
+const WK_BY_ID={};WK_RECIPES.forEach(r=>{WK_BY_ID[r.id]=r});
+const wkCache=new Map();
+
 // Calories et protéines de chaque recette, recalculées à partir des quantités (+ 40 kcal de matière grasse de cuisson midi et soir).
 // Les féculents sont la variable d'ajustement : on les augmente ou les réduit pour atteindre les calories du jour, les protéines restent.
 Object.values(MEAL_BY_ID).forEach(m=>{
@@ -237,16 +480,16 @@ Object.values(MEAL_BY_ID).forEach(m=>{
 
 /* ---------- État ---------- */
 const DEFAULT={
-  goals:{budget:230,margin:15,kcal:2100,protein:180,water:2500,auto:true},
+  goals:{budget:230,margin:15,kcal:2100,protein:180,water:2500,auto:true,wkBudget:40},
   profile:{sex:'',age:0,height:0,weight:0,target:0,rate:0.5,pal:1.3,protKg:2,adjust:0,kgForce:6,kgCourse:7},
-  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},
+  start:null,prices:{},checks:{},extras:{},water:{},swaps:{},off:{},offMeal:{},shop:{},spend:[],weights:[],rerolls:{},wksalt:{},wshop:{},
   fx:{rain:true,level:'mid',color:'white'}
 };
 function load(){
   let saved={};try{saved=JSON.parse(store.get(KEY)||'{}')||{}}catch(e){saved={}}
   const base=structuredClone(DEFAULT);
   const s={...base,...saved,goals:{...base.goals,...(saved.goals||{})},profile:{...base.profile,...(saved.profile||{})},fx:{...base.fx,...(saved.fx||{})}};
-  ['prices','checks','extras','water','swaps','off','offMeal','shop','rerolls'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
+  ['prices','checks','extras','water','swaps','off','offMeal','shop','rerolls','wksalt','wshop'].forEach(k=>{if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={}});
   ['spend','weights'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
   return s;
 }
@@ -254,7 +497,7 @@ let state=load();
 function save(){store.set(KEY,JSON.stringify(state))}
 // Tout ce qui change les menus ou les quantités (jours, prix, budget, profil…) passe par bump() pour refaire les calculs.
 let ver=0;const cycleCache=new Map(),mealCache=new Map(),planCache=new Map();
-function bump(){ver++;mealCache.clear();cycleCache.clear()}
+function bump(){ver++;mealCache.clear();cycleCache.clear();wkCache.clear()}
 function resetCaches(){planCache.clear();bump()}
 
 /* Lien facultatif avec ROAD TO GI : même navigateur = même stockage ; sinon on colle sa sauvegarde. */
@@ -393,7 +636,7 @@ const budgetPerMeal=()=>state.goals.budget/60;
 const cycleBudget=cs=>Math.round(budgetPerMeal()*cycleMeals(cs)*100)/100;
 // marge de sécurité (imprévus, écarts de prix) : 15 € pour un cycle de 60 repas, au prorata des repas gardés
 const cycleMargin=cs=>Math.round(state.goals.margin*cycleMeals(cs)/60*100)/100;
-const price=k=>{const v=state.prices[k];return Number.isFinite(v)&&v>0?v:FOODS[k].packPrice};
+const price=k=>{const v=state.prices[k];return Number.isFinite(v)&&v>0?v:wkFood(k).packPrice};
 
 function scaleIngredient(txt,k,f){
   // « 100 g riz cru » -> « 85 g riz cru » ; « 3 tranches pain complet » -> « 2,5 tranches pain complet »
@@ -512,7 +755,7 @@ function purchasePlan(cs){
   return{weeks,total};
 }
 function fmtQty(k,v){
-  const f=FOODS[k];
+  const f=wkFood(k);
   if(f.unit==='g')return v>=1000?(v/1000).toLocaleString('fr-FR',{maximumFractionDigits:2})+' kg':Math.round(v)+' g';
   if(f.unit==='ml')return v>=1000?(v/1000).toLocaleString('fr-FR',{maximumFractionDigits:2})+' L':Math.round(v)+' ml';
   const n=Math.ceil(v-1e-9);
@@ -550,7 +793,7 @@ function eatenOf(date,plan){
 
 /* ---------- Interface ---------- */
 const view=document.getElementById('view');
-const ui={tab:'today',k:null,week:null,rcat:'all',rweek:false,q:''};
+const ui={tab:'today',k:null,week:null,wk:null,rcat:'all',rweek:false,q:''};
 let lastDay=todayKey();
 const keepScroll=fn=>{const y=window.scrollY;fn();window.scrollTo(0,y)};
 
@@ -641,8 +884,8 @@ function goalCards(today){
 }
 function renderWeekend(today){
   const next=viewDate(),p=posOf(next),cs=cycleStart(p.k);
-  let h=profileBanner()+`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>Week-end : repos</h2>
-    <p class="muted gap">L’appli ne planifie que du lundi au vendredi. Profites-en pour récupérer et préparer la semaine.</p></section>`;
+  let h=profileBanner()+`<section class="card hero"><div class="eyebrow">${dLong(today)}</div><h2>Week-end : cheat meal</h2>
+    <p class="muted gap">Du lundi au vendredi, l’appli planifie tes repas. Le week-end, place au cheat meal : menus gourmands et courses à part, avec un budget de ${euro(wkBudget())}.</p></section>`+wkTodayCard(today);
   if(p.upcoming){
     return h+`<section class="card"><p>Ton cycle commence le <b>${dLong(state.start).toLowerCase()}</b>.</p><div class="btns"><button class="btn gold" data-act="goto" data-tab="shop">Liste de courses</button><button class="btn" data-act="goto" data-tab="goal">Mon objectif</button></div></section>`;
   }
@@ -707,6 +950,123 @@ function renderMenus(){
   return h;
 }
 
+/* ---------- Week-end : planification (samedi + dimanche, 3 repas par jour) ---------- */
+// Thème du mois (change chaque mois), recettes différentes chaque week-end, courses au conditionnement (les restes qui se gardent servent aux week-ends suivants du mois).
+const wkBudget=()=>{const v=state.goals.wkBudget;return v>0?v:40};
+function wkNeeds(recs){const t={};recs.forEach(r=>Object.entries(r.shop).forEach(([k,q])=>{t[k]=(t[k]||0)+q}));return t}
+function wkBuy(recs,inv){
+  const needs=wkNeeds(recs),buys={},next={};let total=0;
+  Object.keys(inv).forEach(k=>{if(!(k in needs)&&!WK_FRESH.has(k))next[k]=inv[k]});
+  Object.entries(needs).forEach(([k,need])=>{
+    const f=wkFood(k),avail=inv[k]||0,deficit=Math.max(0,need-avail),units=deficit>0?Math.ceil(deficit/f.packSize-1e-9):0;
+    const left=avail+units*f.packSize-need,cost=units*price(k);
+    buys[k]={need,avail,units,left,cost};total+=cost;
+    if(!WK_FRESH.has(k)&&left>1e-9)next[k]=left;
+  });
+  return{needs,buys,total:Math.round(total*100)/100,inv:next};
+}
+// Petits-déjeuners : une rotation commune à tous les mois (chaque recette revient tous les 7 week-ends, jamais deux week-ends de suite).
+const WK_BRK=WK_RECIPES.filter(r=>r.slot===0);
+function wkBrkOrder(block){
+  const prevTail=block>0?wkBrkOrder(block-1).slice(-2).map(r=>r.id):[];
+  for(let a=0;a<200;a++){
+    const o=shuffled(WK_BRK,mulberry32(monthSeed('brk|'+block+'|'+a)));
+    if(!prevTail.includes(o[0].id)&&!prevTail.includes(o[1].id))return o;
+  }
+  return shuffled(WK_BRK,mulberry32(monthSeed('brk|'+block)));
+}
+const wkBrkPair=sat=>{const n=Math.round(dateNumber(sat)/864e5/7),o=wkBrkOrder(Math.floor(n/7)),pos=((n%7)+7)%7;return[o[pos*2],o[pos*2+1]]};
+function wkPick(sat,salt,inv,prev,theme){
+  const budget=wkBudget(),mains=WK_RECIPES.filter(r=>r.slot===1&&r.theme===theme),base=wkBrkPair(sat);
+  // recettes de petit-déjeuner à éviter pour un autre tirage : celles de ce week-end et des deux voisins
+  const near=new Set(base.map(r=>r.id));
+  [-7,7].forEach(dd=>wkBrkPair(addDays(sat,dd)).forEach(r=>near.add(r.id)));
+  const others=WK_BRK.filter(r=>!near.has(r.id));
+  let best=null;
+  for(let a=0;a<2500;a++){
+    const rand=mulberry32(monthSeed(sat+'|'+salt+'|'+a));
+    // rotation habituelle d'abord ; si les courses dépassent le budget (ou nouveau tirage demandé), on essaie d'autres petits-déjeuners
+    const b=(!salt&&a<150&&!base.some(r=>prev.has(r.id)))?base:shuffled(others.filter(r=>!prev.has(r.id)),rand).slice(0,2);
+    const m=shuffled(mains.filter(r=>!prev.has(r.id)),rand).slice(0,4);
+    const recs=[b[0],m[0],m[1],b[1],m[2],m[3]],buy=wkBuy(recs,inv);
+    if(!best||buy.total<best.buy.total)best={recs,buy};
+    if(buy.total<=budget+0.005){best={recs,buy};break}
+  }
+  return best;
+}
+// sat = date du samedi (AAAA-MM-JJ). Le thème dépend du mois du samedi ; les courses suivent les week-ends du mois dans l'ordre.
+function wkPlan(sat){
+  if(wkCache.has(sat))return wkCache.get(sat);
+  const i=Math.floor((+sat.slice(8,10)-1)/7),theme=((+sat.slice(0,4))*12+(+sat.slice(5,7)-1))%WK_THEMES.length;
+  let inv={},prev=new Set(),res=null;
+  for(let j=0;j<=i;j++){
+    const s=addDays(sat,-7*(i-j)),r=wkPick(s,state.wksalt[s]||0,inv,prev,theme);
+    inv=r.buy.inv;prev=new Set(r.recs.map(x=>x.id));
+    res={sat:s,i:j,theme,recs:r.recs,buy:r.buy};
+  }
+  wkCache.set(sat,res);return res;
+}
+const wkRecipeCost=r=>Math.round((0.15+Object.entries(r.shop).reduce((a,[k,q])=>a+q/wkFood(k).packSize*price(k),0))*100)/100;
+function wkDefaultSat(){const t=todayKey(),d=dow(t);return d===6?t:d===0?addDays(t,-1):addDays(t,6-d)}
+const WK_SLOT_ICO=['☀️','🍽️','🌙'];
+// repas d'un jour : 0 = samedi, 1 = dimanche
+const wkDay=(P,day)=>P.recs.slice(day*3,day*3+3);
+const wkDayTot=(P,day)=>wkDay(P,day).reduce((a,r)=>({kcal:a.kcal+r.kcal,prot:a.prot+r.protein}),{kcal:0,prot:0});
+function wkMealRow(r,s){
+  return `<div class="meal"><span></span><div><div class="t">${WK_SLOT_ICO[s]} ${['Matin','Midi','Soir'][s]}</div><button class="n" data-act="wkrecipe" data-id="${r.id}">${esc(r.name)}</button><div class="m">${r.kcal} kcal · <b>${r.protein} g</b> de protéines</div></div><div class="c">${euro(wkRecipeCost(r))}</div></div>`;
+}
+function wkShopRow(P,k){
+  const p=P.buy.buys[k],f=wkFood(k),ck=`${P.sat}|${k}`,on=!!state.wshop[ck],unit=price(k);
+  const qty=p.units>0?`${p.units} × ${f.packLabel}`:'En stock';
+  return `<div class="shoprow ${p.units===0?'stock':''} ${on?'ck':''}"><input class="chk" type="checkbox" data-chg="wkshop" data-k="${ck}" ${on?'checked':''} aria-label="Acheté"><div><b><span class="pc">${p.units>0?euro(p.cost):'0,00 €'}</span> ${esc(f.pack)}</b><div class="small muted">Prix du lot : ${euro(unit)} · besoin : ${fmtQty(k,p.need)}${p.avail>0?' · en stock : '+fmtQty(k,p.avail):''}${p.left>0?' · reste : '+fmtQty(k,p.left):''}</div></div><div class="q">${qty}</div></div>`;
+}
+function renderCheat(){
+  const sat=ui.wk||wkDefaultSat(),P=wkPlan(sat),th=WK_THEMES[P.theme],sun=addDays(sat,1),bud=wkBudget(),B=P.buy,left=bud-B.total;
+  const monthName=new Intl.DateTimeFormat('fr-FR',{month:'long',timeZone:'UTC'}).format(new Date(dateNumber(sat)));
+  const lo=addDays(wkDefaultSat(),-7*12),hi=addDays(wkDefaultSat(),7*26);
+  let h=`<div class="card"><div class="cyc"><button data-act="wkweek" data-v="-1" ${sat<=lo?'disabled':''} aria-label="Week-end précédent">‹</button><b>Week-end du ${dShort(sat)} au ${dShort(sun)}<span class="small muted" style="display:block;font-weight:600">${P.i+1}${P.i===0?'er':'e'} week-end du mois · ${monthName}${sat===wkDefaultSat()?' · à venir':''}</span></b><button data-act="wkweek" data-v="1" ${sat>=hi?'disabled':''} aria-label="Week-end suivant">›</button></div></div>`;
+  h+=`<section class="card hero"><div class="rb"><h2>${th.ico} ${esc(th.n)}</h2>${chip('Thème du mois','plain')}</div>
+    <div class="small muted" style="margin-top:4px">Cheat meal du week-end : ${esc(th.d)}. Le thème change chaque mois, les recettes chaque week-end.</div>
+    <div class="eyebrow gap">Reste sur le budget du week-end</div><div class="big ${left>=-0.005?'ok':'bad'}">${euro(left)}</div>
+    <div class="kv"><span>Budget du week-end</span><span>${euro(bud)}</span><span>Courses (au lot, prix Auchan)</span><span>${euro(B.total)}</span><span>6 repas au prorata</span><span>${euro(P.recs.reduce((a,r)=>a+wkRecipeCost(r),0))}</span></div>
+    ${bar(bud>0?B.total/bud:0)}
+    <div class="small muted gap">Ces ${euro(bud)} s’ajoutent au budget du cycle. Le prorata compte seulement la part utilisée de chaque lot ; les courses comptent les lots entiers, et ce qui se garde (surgelés, épicerie) sert aux week-ends suivants du mois.</div>
+    <div class="btns"><button class="btn gold" data-act="wkreroll">↻ Nouveau menu pour ce week-end</button></div></section>`;
+  if(left<-0.005)h+=`<div class="warnbox">Même avec les recettes les moins chères essayées, les courses dépassent le budget de ${euro(-left)}. Les prix Auchan ont peut-être changé : ajuste-les dans les réglages, ou augmente le budget du week-end.</div>`;
+  const E=energy();
+  [0,1].forEach(day=>{
+    const date=addDays(sat,day),tot=wkDayTot(P,day),dep=E.ready?E.tdee[ACT[dow(date)].k]:0;
+    h+=`<section class="card"><div class="rb"><h2>${dLong(date)}</h2>${date===todayKey()?chip('Aujourd’hui','good'):''}</div>`;
+    wkDay(P,day).forEach((r,s)=>{h+=wkMealRow(r,s)});
+    h+=`<div class="small muted" style="margin-top:8px"><b>${kc(tot.kcal)} kcal</b> · <b>${kc(tot.prot)} g</b> de protéines${E.ready?` · dépense estimée ${kc(dep)} kcal (${tot.kcal>=dep?'+':'−'}${kc(Math.abs(tot.kcal-dep))})`:''}</div></section>`;
+  });
+  if(E.ready){
+    const sur=[0,1].reduce((a,day)=>a+wkDayTot(P,day).kcal-E.tdee[ACT[dow(addDays(sat,day))].k],0);
+    h+=`<div class="note">Le week-end n’est pas dans le calcul de ton objectif de la semaine : ces deux jours représentent ${sur>=0?'environ '+kc(sur)+' kcal au-dessus':'environ '+kc(-sur)+' kcal en dessous'} de ta dépense estimée, soit ${sur>=0?'+':'−'}${fmtN(Math.abs(sur)/7700,2)} kg de bilan sur la semaine. À toi de voir si tu compenses en semaine.</div>`;
+  }
+  const keys=Object.keys(B.buys),buy=keys.filter(k=>B.buys[k].units>0),stock=keys.filter(k=>B.buys[k].units===0);
+  h+=`<section class="card"><div class="rb"><h2>Courses du week-end</h2><b>${euro(B.total)}</b></div><div class="small muted">Le prix de chaque lot est affiché devant son nom. Coche ce que tu as acheté.</div></section>`;
+  CAT_ORDER.forEach(cat=>{
+    const items=buy.filter(k=>wkFood(k).cat===cat);
+    if(!items.length)return;
+    h+=`<section class="card"><div class="rb"><h3>${cat}</h3><span class="small muted">${euro(items.reduce((a,k)=>a+B.buys[k].cost,0))}</span></div>${items.map(k=>wkShopRow(P,k)).join('')}</section>`;
+  });
+  if(stock.length)h+=`<section class="card"><h3>Déjà en stock (restes d’un week-end précédent)</h3>${stock.map(k=>wkShopRow(P,k)).join('')}</section>`;
+  h+=`<div class="note">${WK_PRICE_SRC} Huile, sel, poivre, ail, épices et herbes sont des fonds de placard. Les quantités sont pour une personne. Les calories sont calculées à partir des quantités.</div>`;
+  return h;
+}
+function wkRecipeBody(r){
+  return `<div><span class="chip plain">${r.type}</span><span class="chip">${r.kcal} kcal</span><span class="chip">${r.protein} g prot.</span><span class="chip plain">${euro(wkRecipeCost(r))}</span></div>
+  <div class="gap">${r.ingredients.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div>
+  <ol>${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><div class="tip"><b>Astuce :</b> ${esc(r.tips)}</div>`;
+}
+function openCheat(id){const r=WK_BY_ID[id];if(r)openModal(`<h2>${esc(r.name)}</h2><div class="gap">${wkRecipeBody(r)}</div>`)}
+// carte du week-end sur l'onglet Aujourd'hui (samedi et dimanche)
+function wkTodayCard(today){
+  const sat=dow(today)===6?today:addDays(today,-1),P=wkPlan(sat),day=dow(today)===6?0:1,th=WK_THEMES[P.theme];
+  return `<section class="card hero"><div class="rb"><h3>${th.ico} Cheat meal · ${esc(th.n)}</h3><span class="small muted">${kc(wkDayTot(P,day).kcal)} kcal</span></div>${wkDay(P,day).map((r,s)=>wkMealRow(r,s)).join('')}<div class="btns"><button class="btn gold" data-act="goto" data-tab="cheat">Menu et courses du week-end</button></div></section>`;
+}
+
 /* --- Courses et budget --- */
 function renderShop(){
   ensureStart();
@@ -732,12 +1092,12 @@ function renderShop(){
   const keys=Object.keys(wk.needs),buy=keys.filter(k=>wk.buys[k].units>0),stock=keys.filter(k=>wk.buys[k].units===0);
   const rowFor=k=>{
     const p=wk.buys[k],f=FOODS[k],ck=`${cs}|${c.w}|${k}`,on=!!state.shop[ck];
-    return `<div class="shoprow ${p.units===0?'stock':''} ${on?'ck':''}"><input class="chk" type="checkbox" data-chg="shop" data-k="${ck}" ${on?'checked':''} aria-label="Acheté"><div><b>${f.pack}</b><div class="small muted">Besoin : ${fmtQty(k,p.need)}${p.avail>0?' · en stock : '+fmtQty(k,p.avail):''}${p.left>0?' · reste : '+fmtQty(k,p.left):''}</div></div><div class="q">${p.units>0?buyText(k,p):'En stock'}</div></div>`;
+    return `<div class="shoprow ${p.units===0?'stock':''} ${on?'ck':''}"><input class="chk" type="checkbox" data-chg="shop" data-k="${ck}" ${on?'checked':''} aria-label="Acheté"><div><b><span class="pc">${p.units>0?euro(p.cost):'0,00 €'}</span> ${f.pack}</b><div class="small muted">Prix du lot : ${euro(price(k))} · besoin : ${fmtQty(k,p.need)}${p.avail>0?' · en stock : '+fmtQty(k,p.avail):''}${p.left>0?' · reste : '+fmtQty(k,p.left):''}</div></div><div class="q">${p.units>0?buyText(k,p):'En stock'}</div></div>`;
   };
   CAT_ORDER.forEach(cat=>{
     const items=buy.filter(k=>FOODS[k].cat===cat);
     if(!items.length)return;
-    h+=`<section class="card"><h3>${cat}</h3>${items.map(rowFor).join('')}</section>`;
+    h+=`<section class="card"><div class="rb"><h3>${cat}</h3><span class="small muted">${euro(items.reduce((a,k)=>a+wk.buys[k].cost,0))}</span></div>${items.map(rowFor).join('')}</section>`;
   });
   if(stock.length)h+=`<section class="card"><h3>Déjà en stock</h3>${stock.map(rowFor).join('')}</section>`;
   h+=`<section class="card"><details><summary>Prix des conditionnements</summary><p class="muted small gap">${PRICE_SRC} Ajuste un prix si tu le vois changer : le budget prévu se recalcule.</p>${Object.keys(FOODS).map(k=>`<label class="f" style="display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;margin-top:8px"><span>${FOODS[k].pack} · <span class="muted">${FOODS[k].packLabel}</span></span><input inputmode="decimal" data-chg="price" data-k="${k}" value="${fmtN(price(k),2).replace(/^(\d+)$/,'$1,00')}" aria-label="Prix de ${esc(FOODS[k].pack)}"></label>`).join('')}<div class="btns"><button class="btn sm" data-act="prices-reset">Remettre les prix Auchan Okabé</button></div></details></section>`;
@@ -862,15 +1222,17 @@ function renderRecipes(){
 function renderSettings(){
   ensureStart();
   const g=state.goals,r=readRtg();
-  return `<section class="card hero"><h2>Réglages</h2><p class="muted small gap">Du lundi au vendredi uniquement : le week-end n’est pas planifié. Version ${APP_VERSION}.</p></section>
+  return `<section class="card hero"><h2>Réglages</h2><p class="muted small gap">Menus du lundi au vendredi ; le week-end est consacré au cheat meal (onglet Week-end). Version ${APP_VERSION}.</p></section>
   <section class="card"><h3>Budget et objectifs</h3><div class="grid2 gap">
     <label class="f">Budget du cycle de 20 jours (€)<input inputmode="decimal" data-chg="goal" data-k="budget" value="${fmtN(g.budget,2)}"></label>
     <label class="f">Marge de sécurité (€ par cycle)<input inputmode="decimal" data-chg="goal" data-k="margin" value="${fmtN(g.margin,2)}"></label>
+    <label class="f">Budget du week-end cheat meal (€)<input inputmode="decimal" data-chg="goal" data-k="wkBudget" value="${fmtN(wkBudget(),2)}"></label>
     <label class="f">Eau / jour (ml)<input inputmode="numeric" data-chg="goal" data-k="water" value="${g.water}"></label></div>
     <label class="small muted gap" style="display:flex;gap:8px;align-items:center"><input class="chk" style="width:22px;height:22px" type="checkbox" data-chg="goalauto" ${g.auto?'checked':''}>Calculer calories et protéines depuis mon profil (onglet Objectif)</label>
     <div class="grid2 gap"><label class="f">Calories / jour (mode fixe)<input inputmode="numeric" data-chg="goal" data-k="kcal" value="${g.kcal}"></label>
     <label class="f">Protéines / jour (mode fixe, g)<input inputmode="numeric" data-chg="goal" data-k="protein" value="${g.protein}"></label></div>
     <p class="small muted gap">Le budget est réparti par repas planifié (${euro(budgetPerMeal())} par repas, ${euro(budgetPerDay())} par jour de 3 repas). Les objectifs fixes servent tant que le profil est incomplet ou que le calcul automatique est décoché.</p></section>
+  <section class="card"><details><summary>Prix du week-end (cheat meal)</summary><p class="muted small gap">${WK_PRICE_SRC} Ajuste un prix si tu le vois changer : les courses et le budget du week-end se recalculent.</p>${Object.keys(WFOODS).map(k=>`<label class="f" style="display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;margin-top:8px"><span>${WFOODS[k].pack} · <span class="muted">${WFOODS[k].packLabel}</span></span><input inputmode="decimal" data-chg="price" data-k="${k}" value="${fmtN(price(k),2).replace(/^(\d+)$/,'$1,00')}" aria-label="Prix de ${esc(WFOODS[k].pack)}"></label>`).join('')}<div class="btns"><button class="btn sm" data-act="prices-reset">Remettre les prix Auchan Okabé</button></div></details></section>
   <section class="card"><h3>Dépense des séances</h3><p class="small muted">Calories brûlées par kg de poids de corps pendant une séance (réglage avancé).</p><div class="grid2 gap">
     <label class="f">Jour de force (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgForce" value="${fmtN(state.profile.kgForce,1)}"></label>
     <label class="f">Jour de course (kcal/kg)<input inputmode="decimal" data-chg="prof" data-k="kgCourse" value="${fmtN(state.profile.kgCourse,1)}"></label></div></section>
@@ -920,9 +1282,9 @@ let toastT=null;
 function toast(t){const el=document.getElementById('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},2600)}
 
 /* ---------- Affichage et événements ---------- */
-const TITLES={today:'Nutrition · du lundi au vendredi',menus:'Menus du cycle',shop:'Courses et budget',goal:'Poids, calories, objectif',recipes:'Recettes',settings:'Réglages'};
+const TITLES={today:'Nutrition · du lundi au vendredi',menus:'Menus du cycle',shop:'Courses et budget',cheat:'Cheat meal du week-end',goal:'Poids, calories, objectif',recipes:'Recettes',settings:'Réglages'};
 function render(){
-  const fn={today:renderToday,menus:renderMenus,shop:renderShop,goal:renderGoal,recipes:renderRecipes,settings:renderSettings}[ui.tab]||renderToday;
+  const fn={today:renderToday,menus:renderMenus,shop:renderShop,cheat:renderCheat,goal:renderGoal,recipes:renderRecipes,settings:renderSettings}[ui.tab]||renderToday;
   view.innerHTML=fn();
   document.getElementById('sub').textContent=TITLES[ui.tab]||'';
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===ui.tab));
@@ -938,6 +1300,9 @@ view.addEventListener('click',e=>{
   switch(a){
     case 'goto':goto(D.tab);break;
     case 'recipe':openRecipe(D.id,Number(D.f)||1);break;
+    case 'wkrecipe':openCheat(D.id);break;
+    case 'wkweek':ui.wk=addDays(ui.wk||wkDefaultSat(),7*Number(D.v));keepScroll(render);break;
+    case 'wkreroll':{const s=ui.wk||wkDefaultSat();state.wksalt[s]=(state.wksalt[s]||0)+1;bump();save();render();toast('Nouveau menu pour ce week-end');break}
     case 'swap':openSwap(D.cs,+D.w,+D.d,+D.s);break;
     case 'cyc':{const c=uiCycle();ui.k=Math.max(0,c.k+Number(D.v));ui.week=0;render();break}
     case 'week':ui.week=+D.w;keepScroll(render);break;
@@ -1014,9 +1379,10 @@ view.addEventListener('change',e=>{
     case 'meal':if(t.checked)state.checks[k]=true;else delete state.checks[k];save();keepScroll(render);break;
     case 'mealon':changePlan(k.split('|')[0],()=>{if(t.checked)delete state.offMeal[k];else state.offMeal[k]=true});break;
     case 'shop':if(t.checked)state.shop[k]=true;else delete state.shop[k];save();keepScroll(render);break;
+    case 'wkshop':if(t.checked)state.wshop[k]=true;else delete state.wshop[k];save();keepScroll(render);break;
     case 'goal':{
-      const v=num(t.value),min={budget:50,margin:0,kcal:1200,protein:60,water:500}[k];
-      if(v>=min)state.goals[k]=(k==='budget'||k==='margin')?Math.round(v*100)/100:Math.round(v);
+      const v=num(t.value),min={budget:50,margin:0,wkBudget:10,kcal:1200,protein:60,water:500}[k];
+      if(v>=min)state.goals[k]=(k==='budget'||k==='margin'||k==='wkBudget')?Math.round(v*100)/100:Math.round(v);
       bump();save();keepScroll(render);break;
     }
     case 'goalauto':state.goals.auto=t.checked;bump();save();keepScroll(render);break;
@@ -1049,7 +1415,7 @@ view.addEventListener('input',e=>{
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)return;
-  const t=todayKey();if(t!==lastDay){lastDay=t;ui.k=null;ui.week=null;render()}
+  const t=todayKey();if(t!==lastDay){lastDay=t;ui.k=null;ui.week=null;ui.wk=null;render()}
 });
 
 /* ---------- Ambiance Matrix : pluie de code colorée + titres qui se décodent ---------- */
